@@ -1,4 +1,6 @@
 data/
+MNIST-data/
+build/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
