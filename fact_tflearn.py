@@ -21,7 +21,7 @@ def scale_images(images):
     return a.reshape((len(images), 45, 46, -1))
 
 
-def load_crab_data(start=0, end=-1):
+def load_crab_training_data(start=0, end=-1):
     path = './data/crab_images.hdf5'
     df, images = image_io.read_n_rows(path, start=start, end=end)
 
@@ -44,6 +44,14 @@ def load_crab_data(start=0, end=-1):
         np.sum(Y), N - np.sum(Y)))
     Y = OneHotEncoder().fit_transform(Y.reshape(-1, 1)).toarray()
     return df, X, Y
+
+
+def load_crab_test_data(start=0, end=-1):
+    path = './data/crab_images.hdf5'
+    df, images = image_io.read_n_rows(path, start=start, end=end)
+    X = scale_images(images)
+
+    return df, X
 
 
 def simple(learning_rate=0.001):
@@ -127,7 +135,7 @@ def main(start, end, learning_rate, train, network):
                         )
 
     if train:
-        df, X, Y = load_crab_data(start, end)
+        df, X, Y = load_crab_training_data(start, end)
         model.fit(X,
                   Y,
                   n_epoch=1,
@@ -143,7 +151,7 @@ def main(start, end, learning_rate, train, network):
         model.save('./data/model_alexnet/fact_tflearn')
     else:
         model.load('./data/model_alexnet/fact_tflearn')
-        df, X, Y = load_crab_data(start, end)
+        df, X = load_crab_test_data(start, end)
         N = len(df)
         idx = np.array_split(np.arange(0, N), N / 256)
         predictions = []
