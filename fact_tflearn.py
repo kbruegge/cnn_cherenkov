@@ -5,15 +5,19 @@ from tflearn.layers.conv import conv_2d, max_pool_2d
 from tflearn.layers.normalization import local_response_normalization
 from tflearn.layers.estimator import regression
 import image_io
-from sklearn.preprocessing import StandardScaler
 import numpy as np
+# from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 import click
 
 
 def scale_images(images):
-    X = images.astype(np.float32).reshape(len(images), -1)
-    return StandardScaler().fit_transform(X).reshape((len(images), 45, 46, -1))
+    qmax = np.percentile(images, q=99.5, axis=(1, 2))
+    a = images / qmax[:, np.newaxis, np.newaxis]
+    return a.reshape((len(images), 45, 46, -1))
+
+    # X = images.astype(np.float32).reshape(len(images), -1)
+    # return StandardScaler().fit_transform(X).reshape((len(images), 45, 46, -1))
 
 
 def load_crab_data(start=0, end=-1):
@@ -23,6 +27,8 @@ def load_crab_data(start=0, end=-1):
     df['prediction_label'] = np.where(df.gamma_prediction > 0.8, 0, 1)
 
     X = scale_images(images)
+    # import IPython; IPython.embed()
+
     Y = df.prediction_label.values.astype(np.float32)
 
     N = len(df)
