@@ -12,7 +12,7 @@ import click
 
 
 def scale_images(images):
-    images[images == 3] = 0
+    #images[images == 3] = 0
     qmax = np.percentile(images, q=99.5, axis=(1, 2))
     a = images / qmax[:, np.newaxis, np.newaxis]
     a = np.roll(a, 23)
@@ -28,7 +28,7 @@ def load_crab_data(start=0, end=-1):
 
     X = scale_images(images)
     Y = df.prediction_label.values.astype(np.float32)
-    
+
     N = len(df)
     ids_true = df[df.prediction_label == 1].index.values
     ids_true = np.random.choice(ids_true, N // 2)
@@ -129,12 +129,12 @@ def main(start, end, learning_rate, train, network):
         df, X, Y = load_crab_data(start, end)
         model.fit(X,
                   Y,
-                  n_epoch=1,
-                  validation_set=0.1,
+                  n_epoch=10,
+                  validation_set=0.2,
                   shuffle=True,
                   show_metric=True,
-                  batch_size=256,
-                  snapshot_step=200,
+                  batch_size=512,
+                  snapshot_step=100,
                   snapshot_epoch=False,
                   run_id='fact_tflearn'
                   )
