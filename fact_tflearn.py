@@ -13,7 +13,7 @@ import click
 
 
 def scale_images(images):
-    images[images == 3] = 0
+    #images[images == 3] = 0
     qmax = np.percentile(images, q=99.5, axis=(1, 2))
     a = images / qmax[:, np.newaxis, np.newaxis]
     a = np.roll(a, 23)
@@ -129,7 +129,7 @@ def main(start, end, learning_rate, train, network):
         network = simple(learning_rate=learning_rate)
 
     model = tflearn.DNN(network,
-                        checkpoint_path='./data/model_alexnet',
+                        checkpoint_path='./data/model/',
                         max_checkpoints=1,
                         tensorboard_verbose=2,
                         )
@@ -139,21 +139,24 @@ def main(start, end, learning_rate, train, network):
         model.fit(X,
                   Y,
                   n_epoch=1,
-                  validation_set=0.1,
+                  validation_set=0.2,
                   shuffle=True,
                   show_metric=True,
-                  batch_size=256,
-                  snapshot_step=200,
+                  batch_size=512,
+                  snapshot_step=100,
                   snapshot_epoch=False,
                   run_id='fact_tflearn'
                   )
 
-        model.save('./data/model_alexnet/fact_tflearn')
+        model.save('./data/model/fact.tflearn')
     else:
-        model.load('./data/model_alexnet/fact_tflearn')
+        print('Loading Model')
+        model.load('./data/model/fact.tflearn')
         df, X = load_crab_test_data(start, end)
         N = len(df)
-        idx = np.array_split(np.arange(0, N), N / 256)
+        idx = np.array_split(np.arange(0, N), N / 128)
+
+        print('Starting Batch Processing')
         predictions = []
         for ids in tqdm(idx):
             l = ids[0]
