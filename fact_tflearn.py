@@ -121,7 +121,7 @@ def main(start, end, learning_rate, train, network):
         network = simple(learning_rate=learning_rate)
 
     model = tflearn.DNN(network,
-                        checkpoint_path='./data/model_alexnet',
+                        checkpoint_path='./data/model/',
                         max_checkpoints=1,
                         tensorboard_verbose=2,
                         )
@@ -130,7 +130,7 @@ def main(start, end, learning_rate, train, network):
         df, X, Y = load_crab_data(start, end)
         model.fit(X,
                   Y,
-                  n_epoch=10,
+                  n_epoch=1,
                   validation_set=0.2,
                   shuffle=True,
                   show_metric=True,
@@ -140,12 +140,15 @@ def main(start, end, learning_rate, train, network):
                   run_id='fact_tflearn'
                   )
 
-        model.save('./data/model_alexnet/fact_tflearn')
+        model.save('./data/model/fact.tflearn')
     else:
-        model.load('./data/model_alexnet/fact_tflearn')
+        print('Loading Model')
+        model.load('./data/model/fact.tflearn')
         df, X, Y = load_crab_data(start, end)
         N = len(df)
-        idx = np.array_split(np.arange(0, N), N / 256)
+        idx = np.array_split(np.arange(0, N), N / 128)
+
+        print('Starting Batch Processing')
         predictions = []
         for ids in tqdm(idx):
             l = ids[0]
