@@ -150,7 +150,8 @@ def main(start, end, learning_rate, train, network):
         for ids in tqdm(idx):
             l = ids[0]
             u = ids[-1]
-            predictions.extend(model.predict(X[l:(u + 1)])[:, 0])
+            batch = X[l:(u + 1)]
+            predictions.extend(model.predict(batch)[:, 0])
 
         df['predictions_convnet'] = predictions
         df.to_hdf('./build/predictions.h5', key='events')
