@@ -16,7 +16,7 @@ def scale_images(images):
     return StandardScaler().fit_transform(X).reshape((len(images), 45, 46, -1))
 
 
-def load_data(start=0, end=-1):
+def load_crab_data(start=0, end=-1):
     path = './data/crab_images.hdf5'
     df, images = image_io.read_n_rows(path, start=start, end=end)
 
@@ -35,13 +35,45 @@ def load_data(start=0, end=-1):
     X = X[ids]
     Y = Y[ids]
 
-    print('Loaded {} positive labels and {} negative labels'.format(np.sum(Y), N - np.sum(Y)))
+    print('Loaded {} positive labels and {} negative labels'.format(
+        np.sum(Y), N - np.sum(Y)))
     Y = OneHotEncoder().fit_transform(Y.reshape(-1, 1)).toarray()
     return df, X, Y
 
 
+def simple(learning_rate=0.001):
+    print('Building simple net')
+    network = input_data(shape=[None, 45, 46, 1])
+
+    network = conv_2d(network, 5, 10, activation='relu')
+    network = max_pool_2d(network, 3, strides=1)
+
+    network = conv_2d(network, 3, 10, activation='relu')
+    network = max_pool_2d(network, 3, strides=1)
+
+    network = conv_2d(network, 5, 10, activation='relu')
+    network = max_pool_2d(network, 3, strides=1)
+
+    network = conv_2d(network, 3, 10, activation='relu')
+    network = max_pool_2d(network, 3, strides=1)
+
+    network = fully_connected(network, 100, activation='relu')
+    network = dropout(network, 0.5)
+    network = fully_connected(network, 100, activation='relu')
+    network = dropout(network, 0.5)
+    network = fully_connected(network, 100, activation='relu')
+    network = dropout(network, 0.5)
+    network = fully_connected(network, 2, activation='softmax')
+    network = regression(network,
+                         optimizer='adam',
+                         loss='binary_crossentropy',
+                         learning_rate=learning_rate
+                         )
+    return network
+
+
 def alexnet(learning_rate=0.001):
-    # Building 'AlexNet'
+    print('Building AlexNet')
     network = input_data(shape=[None, 45, 46, 1])
     network = conv_2d(network, 96, 11, strides=4, activation='relu')
     network = max_pool_2d(network, 3, strides=2)
@@ -72,23 +104,41 @@ def alexnet(learning_rate=0.001):
 @click.option('-e', '--end', default=10000)
 @click.option('-l', '--learning_rate', default=0.001)
 @click.option('--train/--apply', default=True)
-def main(start, end, learning_rate, train):
+@click.option('-n', '--network', default='alexnet')
+def main(start, end, learning_rate, train, network):
     # config = tf.ConfigProto(gpu_options = tf.GPUOptions(allow_growth = True))
     # session = tf.Session(config=config)
-    network = alexnet(learning_rate=learning_rate)
-    model = tflearn.DNN(network, checkpoint_path='./data/model_alexnet',
-                                max_checkpoints=1, tensorboard_verbose=2,)
+
+    if network == 'alexnet':
+        network = alexnet(learning_rate=learning_rate)
+
+    if network == 'simple':
+        network = simple(learning_rate=learning_rate)
+
+    model = tflearn.DNN(network,
+                        checkpoint_path='./data/model_alexnet',
+                        max_checkpoints=1,
+                        tensorboard_verbose=2,
+                        )
 
     if train:
-        df, X, Y = load_data(start, end)
-        model.fit(X, Y, n_epoch=1, validation_set=0.1, shuffle=True,
-                          show_metric=True, batch_size=256, snapshot_step=200,
-                          snapshot_epoch=False, run_id='fact_tflearn')
+        df, X, Y = load_crab_data(start, end)
+        model.fit(X,
+                  Y,
+                  n_epoch=1,
+                  validation_set=0.1,
+                  shuffle=True,
+                  show_metric=True,
+                  batch_size=256,
+                  snapshot_step=200,
+                  snapshot_epoch=False,
+                  run_id='fact_tflearn'
+                  )
 
         model.save('./data/model_alexnet/fact_tflearn')
     else:
 
-        df, X, Y = load_data(start, end)
+        df, X, Y = load_crab_data(start, end)
         model.load('./data/model_alexnet/fact_tflearn')
         predictions = model.predict(X)
         df['predictions_convnet'] = predictions[:, 0]
