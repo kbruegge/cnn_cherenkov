@@ -6,6 +6,7 @@ from tflearn.layers.normalization import local_response_normalization
 from tflearn.layers.estimator import regression
 import image_io
 import numpy as np
+from tqdm import tqdm
 # from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 import click
@@ -28,7 +29,7 @@ def load_crab_data(start=0, end=-1):
 
     X = scale_images(images)
     Y = df.prediction_label.values.astype(np.float32)
-    
+
     N = len(df)
     ids_true = df[df.prediction_label == 1].index.values
     ids_true = np.random.choice(ids_true, N // 2)
@@ -141,11 +142,17 @@ def main(start, end, learning_rate, train, network):
 
         model.save('./data/model_alexnet/fact_tflearn')
     else:
-
-        df, X, Y = load_crab_data(start, end)
         model.load('./data/model_alexnet/fact_tflearn')
-        predictions = model.predict(X)
-        df['predictions_convnet'] = predictions[:, 0]
+        df, X, Y = load_crab_data(start, end)
+        N = len(df)
+        idx = np.array_split(np.arange(0, N), N / 256)
+        predictions = []
+        for ids in tqdm(idx):
+            l = ids[0]
+            u = ids[-1]
+            predictions.extend(model.predict(X[l:(u + 1)])[:, 0])
+
+        df['predictions_convnet'] = predictions
         df.to_hdf('./build/predictions.h5', key='events')
 
 
