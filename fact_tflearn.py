@@ -12,12 +12,12 @@ import click
 
 
 def scale_images(images):
+    images[images == 3] = 0
     qmax = np.percentile(images, q=99.5, axis=(1, 2))
     a = images / qmax[:, np.newaxis, np.newaxis]
-    return a.reshape((len(images), 45, 46, -1))
+    a = np.roll(a, 23)
 
-    # X = images.astype(np.float32).reshape(len(images), -1)
-    # return StandardScaler().fit_transform(X).reshape((len(images), 45, 46, -1))
+    return a.reshape((len(images), 45, 46, -1))
 
 
 def load_crab_data(start=0, end=-1):
@@ -27,10 +27,8 @@ def load_crab_data(start=0, end=-1):
     df['prediction_label'] = np.where(df.gamma_prediction > 0.8, 0, 1)
 
     X = scale_images(images)
-    # import IPython; IPython.embed()
-
     Y = df.prediction_label.values.astype(np.float32)
-
+    
     N = len(df)
     ids_true = df[df.prediction_label == 1].index.values
     ids_true = np.random.choice(ids_true, N // 2)
