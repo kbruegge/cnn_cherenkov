@@ -20,15 +20,15 @@ def load_data(start=0, end=-1):
     path = './data/crab_images.hdf5'
     df, images = image_io.read_n_rows(path, start=start, end=end)
 
-    df['prediction_label'] = np.where(df.gamma_prediction > 0.7, 0, 1)
+    df['prediction_label'] = np.where(df.gamma_prediction > 0.8, 0, 1)
 
     X = scale_images(images)
     Y = df.prediction_label.values.astype(np.float32)
 
     N = len(df)
-    ids_true = df.query('gamma_prediction > 0.7').index.values
+    ids_true = df[df.prediction_label == 1].index.values
     ids_true = np.random.choice(ids_true, N // 2)
-    ids_false = df.query('gamma_prediction <= 0.7').index.values
+    ids_false = df[df.prediction_label == 0].index.values
     ids_false = np.random.choice(ids_false, N // 2)
     ids = np.append(ids_false, ids_true)
 
