@@ -10,6 +10,8 @@ from tqdm import tqdm
 # from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 import click
+import fact.io as fio
+import pandas as pd
 
 
 def scale_images(images):
@@ -165,6 +167,9 @@ def main(start, end, learning_rate, train, network):
             predictions.extend(model.predict(batch)[:, 0])
 
         df['predictions_convnet'] = predictions
+
+        dl3 = fio.read_data('./data/dl3/open_crab_sample_dl3.hdf5', key='events')
+        df = pd.merge(dl3, df)
         df.to_hdf('./build/predictions.h5', key='events')
 
 
