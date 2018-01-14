@@ -12,24 +12,19 @@ from sklearn.preprocessing import OneHotEncoder
 import click
 import fact.io as fio
 import pandas as pd
+import os
 
 
 def scale_images(images):
-    #images[images == 3] = 0
+    images[images < 3] = 0
     qmax = np.percentile(images, q=99.5, axis=(1, 2))
     a = images / qmax[:, np.newaxis, np.newaxis]
-    a = np.roll(a, 23)
-
     return a.reshape((len(images), 45, 46, -1))
 
 
-def load_crab_training_data(start=0, end=-1):
-    path = './data/crab_images.hdf5'
-    df, images = image_io.read_n_rows(path, start=start, end=end)
+def sample_training_data(df, images):
+    df = df.reset_index()
 
-    df['prediction_label'] = np.where(df.gamma_prediction > 0.8, 0, 1)
-
-    X = scale_images(images)
     Y = df.prediction_label.values.astype(np.float32)
 
     N = len(df)
@@ -39,21 +34,37 @@ def load_crab_training_data(start=0, end=-1):
     ids_false = np.random.choice(ids_false, N // 2)
     ids = np.append(ids_false, ids_true)
 
-    X = X[ids]
+    X = images[ids]
     Y = Y[ids]
 
     print('Loaded {} positive labels and {} negative labels'.format(
         np.sum(Y), N - np.sum(Y)))
     Y = OneHotEncoder().fit_transform(Y.reshape(-1, 1)).toarray()
-    return df, X, Y
+    return X, Y
 
 
-def load_crab_test_data(start=0, end=-1):
-    path = './data/crab_images.hdf5'
-    df, images = image_io.read_n_rows(path, start=start, end=end)
-    X = scale_images(images)
+def load_crab_data(start=0, end=-1):
+    df, images = image_io.read_n_rows('./data/crab_images.hdf5', start=start, end=end)
+    dl3 = fio.read_data('./data/dl3/open_crab_sample_dl3.hdf5', key='events')
+    dl3 = dl3.set_index(['night', 'run_id', 'event_num'])
 
-    return df, X
+    df['int_index'] = df.index
+    df = df.set_index(['night', 'run_id', 'event_num'])
+
+
+    data = df.join(dl3, how='inner')
+    print('Events in open data sample: {}, events in photons_stream: {}, events in joined data: {}'.format(len(dl3), len(df), len(data)))
+
+    if len(data) == 0:
+        return [], []
+
+    data['prediction_label'] = np.where(data.gamma_prediction > 0.8, 0, 1)
+
+    images = scale_images(images[data.int_index])
+
+    assert len(images) == len(data)
+
+    return data, images
 
 
 def simple(learning_rate=0.001):
@@ -116,11 +127,12 @@ def alexnet(learning_rate=0.001):
 
 @click.command()
 @click.option('-s', '--start', default=0)
-@click.option('-e', '--end', default=10000)
+@click.option('-e', '--end', default=-1)
 @click.option('-l', '--learning_rate', default=0.001)
 @click.option('--train/--apply', default=True)
 @click.option('-n', '--network', default='alexnet')
-def main(start, end, learning_rate, train, network):
+@click.option('-p', '--epochs', default=1)
+def main(start, end, learning_rate, train, network, epochs):
     # config = tf.ConfigProto(gpu_options = tf.GPUOptions(allow_growth = True))
     # session = tf.Session(config=config)
 
@@ -137,10 +149,15 @@ def main(start, end, learning_rate, train, network):
                         )
 
     if train:
-        df, X, Y = load_crab_training_data(start, end)
+        df, images = load_crab_data(start, end)
+        if os.path.exists('./data/model/fact.tflearn.index'):
+            print('Loading Model')
+            model.load('./data/model/fact.tflearn')
+
+        X, Y = sample_training_data(df, images)
         model.fit(X,
                   Y,
-                  n_epoch=1,
+                  n_epoch=epochs,
                   validation_set=0.2,
                   shuffle=True,
                   show_metric=True,
@@ -154,22 +171,26 @@ def main(start, end, learning_rate, train, network):
     else:
         print('Loading Model')
         model.load('./data/model/fact.tflearn')
-        df, X = load_crab_test_data(start, end)
-        N = len(df)
-        idx = np.array_split(np.arange(0, N), N / 128)
-
-        print('Starting Batch Processing')
-        predictions = []
+        N = image_io.number_of_images('./data/crab_images.hdf5')
+        idx = np.array_split(np.arange(0, N), N / 8000)
+        dfs = []
+        event_counter = 0
         for ids in tqdm(idx):
             l = ids[0]
             u = ids[-1]
-            batch = X[l:(u + 1)]
-            predictions.extend(model.predict(batch)[:, 0])
+            df, images = load_crab_data(l, u+1)
+            event_counter += len(df)
+            if len(df) == 0:
+                continue
+            predictions = model.predict(images)[:, 0]
 
-        df['predictions_convnet'] = predictions
+            df['predictions_convnet'] = predictions
+            dfs.append(df)
 
-        dl3 = fio.read_data('./data/dl3/open_crab_sample_dl3.hdf5', key='events')
-        df = pd.merge(dl3, df)
+        print('Concatenating {} data frames'.format(len(dfs)))
+        df = pd.concat(dfs)
+        assert event_counter == len(df)
+        print('Writing {} events to file'.format(event_counter))
         df.to_hdf('./build/predictions.h5', key='events')
 
 
