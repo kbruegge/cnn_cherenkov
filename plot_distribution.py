@@ -6,9 +6,16 @@ import numpy as np
 
 @click.command()
 @click.argument('predictions', type=click.Path(exists=True, dir_okay=False))
-def main(predictions):
+@click.option('--net/--no-net', default=True)
+def main(predictions, net):
     df = pd.read_hdf(predictions)
-    plt.hist(df.predictions_convnet, bins=np.linspace(0, 1, 50))
+    if net:
+        print('using net predictions')
+        d = df.predictions_convnet
+    else:
+        print('using standart predictions')
+        d = df.gamma_prediction
+    plt.hist(d, bins=np.linspace(0, 1, 50))
     plt.show()
 
 

@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from fact.analysis import li_ma_significance
-
+import fact.io as fio
 
 stats_box_template = r'''
 $N_\mathrm{{On}} = {n_on}$, $N_\mathrm{{Off}} = {n_off}$, $\alpha = {alpha}$
@@ -20,7 +20,7 @@ def main(predictions, threshold, theta_cut, net):
     bins = 40
     alpha = 0.2
     limits = [0, 0.3]
-    df = pd.read_hdf(predictions, key='events')
+    df = fio.read_data(predictions, key='events')
 
     if net:
         print('using cnn predictions')
