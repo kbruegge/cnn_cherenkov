@@ -22,21 +22,22 @@ def main(predictions, threshold, theta_cut, net):
     limits = [0, 0.3]
     df = fio.read_data(predictions, key='events')
 
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
     if net:
         print('using cnn predictions')
         selected = df.query('predictions_convnet > {}'.format(threshold))
+        ax.set_title('Neural Net predictions')
     else:
         print('using standard predictions')
         selected = df.query('gamma_prediction > {}'.format(threshold))
+        ax.set_title('RF predictions')
 
     theta_on = selected.theta_deg
     theta_off = pd.concat([
         selected['theta_deg_off_{}'.format(i)]
         for i in range(1, 6)
     ])
-
-    fig = plt.figure()
-    ax = fig.add_subplot(1, 1, 1)
     h_on, bin_edges = np.histogram(
         theta_on.apply(lambda x: x**2).values,
         bins=bins,
@@ -69,8 +70,8 @@ def main(predictions, threshold, theta_cut, net):
         xerr=bin_width / 2,
         linestyle='',
         label='Off',
+        color = 'darkgray',
     )
-
 
     ax.axvline(theta_cut**2, color='black', alpha=0.3, linestyle='--')
 
