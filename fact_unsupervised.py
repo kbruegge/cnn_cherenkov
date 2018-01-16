@@ -6,6 +6,14 @@ from tqdm import tqdm
 import click
 import pandas as pd
 import os
+import tensorflow as tf
+
+
+def region_loss(y_pred, y_true):
+    with tf.name_scope(None):
+        import IPython; IPython.embed()
+        
+        return tf.reduce_mean(tf.sum(tf.int(y_pred) * y_true[0]))
 
 
 @click.command()
@@ -32,7 +40,10 @@ def main(start, end, learning_rate, train, network, epochs):
             print('Loading Model')
             model.load('./data/model/fact.tflearn')
 
-        df, X, Y = image_io.create_training_sample(df, images)
+        df, X, gamma_label = image_io.create_training_sample(df, images)
+
+        Y = df[['theta_deg', 'theta_deg_off_1', 'theta_deg_off_2', 'theta_deg_off_3', 'theta_deg_off_4', 'theta_deg_off_4']]
+
         model.fit(X,
                   Y,
                   n_epoch=epochs,
