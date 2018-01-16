@@ -37,7 +37,7 @@ def main(start, end, learning_rate, train, network, epochs):
             print('Loading Model')
             model.load('./data/model/fact.tflearn')
 
-        _, X, Y = image_io.sample_training_data(df, images)
+        _, X, Y = image_io.create_training_sample(df, images)
         model.fit(X,
                   Y,
                   n_epoch=epochs,

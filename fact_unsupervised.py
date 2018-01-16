@@ -32,7 +32,7 @@ def main(start, end, learning_rate, train, network, epochs):
             print('Loading Model')
             model.load('./data/model/fact.tflearn')
 
-        X, Y = image_io.sample_training_data(df, images)
+        df, X, Y = image_io.create_training_sample(df, images)
         model.fit(X,
                   Y,
                   n_epoch=epochs,
@@ -56,7 +56,7 @@ def main(start, end, learning_rate, train, network, epochs):
         for ids in tqdm(idx):
             l = ids[0]
             u = ids[-1]
-            df, images = load_crab_data(l, u+1)
+            df, images = image_io.load_crab_data(l, u+1)
             event_counter += len(df)
             if len(df) == 0:
                 continue

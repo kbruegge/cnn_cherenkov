@@ -50,7 +50,7 @@ def load_crab_data(start=0, end=-1):
     return data, images
 
 
-def sample_training_data(df, images):
+def create_training_sample(df, images, prediction_threshold=0.8):
     '''
     Returns array of images X and on-hot encoded labels Y. Both classes equally sampled.
     '''

@@ -4,8 +4,12 @@ from tflearn.layers.normalization import local_response_normalization
 from tflearn.layers.estimator import regression
 
 
-def simple(learning_rate=0.001):
-    print('Building simple net')
+def simple(learning_rate=0.001, loss=None):
+    if not loss:
+        loss = 'binary_crossentropy'
+
+    print('Building Simple Net with loss {}'.format(loss))
+
     network = input_data(shape=[None, 45, 46, 1])
 
     network = conv_2d(network, 5, 10, activation='relu')
@@ -29,14 +33,17 @@ def simple(learning_rate=0.001):
     network = fully_connected(network, 2, activation='softmax')
     network = regression(network,
                          optimizer='adam',
-                         loss='binary_crossentropy',
+                         loss=loss,
                          learning_rate=learning_rate
                          )
     return network
 
 
-def alexnet(learning_rate=0.001):
-    print('Building AlexNet')
+def alexnet(learning_rate=0.001, loss=None):
+    if not loss:
+        loss = 'binary_crossentropy'
+
+    print('Building AlexNet with loss {}'.format(loss))
     network = input_data(shape=[None, 45, 46, 1])
     network = conv_2d(network, 96, 11, strides=4, activation='relu')
     network = max_pool_2d(network, 3, strides=2)
@@ -56,7 +63,7 @@ def alexnet(learning_rate=0.001):
     network = fully_connected(network, 2, activation='softmax')
     network = regression(network,
                          optimizer='momentum',
-                         loss='binary_crossentropy',
+                         loss=loss,
                          learning_rate=learning_rate
                          )
     return network
