@@ -16,14 +16,9 @@ import os
 @click.option('-n', '--network', default='alexnet')
 @click.option('-p', '--epochs', default=1)
 def main(start, end, learning_rate, train, network, epochs):
-    # config = tf.ConfigProto(gpu_options = tf.GPUOptions(allow_growth = True))
-    # session = tf.Session(config=config)
 
-    if network == 'alexnet':
-        network = networks.alexnet(learning_rate=learning_rate)
+    network = networks.alexnet(learning_rate=learning_rate, )
 
-    if network == 'simple':
-        network = networks.simple(learning_rate=learning_rate)
 
     model = tflearn.DNN(network,
                         checkpoint_path='./data/model/',
@@ -37,7 +32,7 @@ def main(start, end, learning_rate, train, network, epochs):
             print('Loading Model')
             model.load('./data/model/fact.tflearn')
 
-        _, X, Y = image_io.sample_training_data(df, images)
+        X, Y = image_io.sample_training_data(df, images)
         model.fit(X,
                   Y,
                   n_epoch=epochs,
@@ -61,7 +56,7 @@ def main(start, end, learning_rate, train, network, epochs):
         for ids in tqdm(idx):
             l = ids[0]
             u = ids[-1]
-            df, images = image_io.load_crab_data(l, u+1)
+            df, images = load_crab_data(l, u+1)
             event_counter += len(df)
             if len(df) == 0:
                 continue
