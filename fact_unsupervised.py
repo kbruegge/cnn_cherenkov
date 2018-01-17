@@ -20,24 +20,30 @@ theta_keys = [
 ]
 
 
-def region_loss(y_pred, y_true):
+def sigma_loss(y_pred, y_true):
     with tf.name_scope(None):
-        # N = tf.size(y_pred)
-        # print(y_true.shape)
-        # print(y_pred.shape)
-        # print(N)
-        # theta = tf.reshape(y_true, [512, 6])
-        # print(theta.shape)
-        # distance_on = y_true[:, 0]
+        on_region_radius_degree = 0.2
+        alpha = 0.2
+
         theta = y_true
-        a = y_pred[:, 0] * theta[:, 0]
-        b =  (1 - y_pred[:, 0]) * theta[:, 1]
-        c = (1 - y_pred[:, 0]) * theta[:, 2]
-        d = (1 - y_pred[:, 0]) * theta[:, 3]
-        e = (1 - y_pred[:, 0]) * theta[:, 4]
-        f = (1 - y_pred[:, 0]) * theta[:, 5]
-        # d = y_pred[:, 1] * theta[:, 3]
-        loss = tf.reduce_mean(a + b + c + d + e + f)
+        theta_on = theta[:, 0]
+        theta_off_1 = theta[:, 1]
+        theta_off_2 = theta[:, 2]
+        theta_off_3 = theta[:, 3]
+        theta_off_4 = theta[:, 4]
+        theta_off_5 = theta[:, 5]
+
+        N_on = tf.reduce_sum(tf.where(theta_on < on_region_radius_degree, y_pred[:, 0] * theta_on))
+        N_off_1 = tf.reduce_sum(tf.where(theta_off_1 < on_region_radius_degree, (1 - y_pred[:, 0]) * theta_off_1))
+        N_off_2 = tf.reduce_sum(tf.where(theta_off_2 < on_region_radius_degree, (1 - y_pred[:, 0]) * theta_off_2))
+        N_off_3 = tf.reduce_sum(tf.where(theta_off_3 < on_region_radius_degree, (1 - y_pred[:, 0]) * theta_off_3))
+        N_off_4 = tf.reduce_sum(tf.where(theta_off_4 < on_region_radius_degree, (1 - y_pred[:, 0]) * theta_off_4))
+        N_off_5 = tf.reduce_sum(tf.where(theta_off_5 < on_region_radius_degree, (1 - y_pred[:, 0]) * theta_off_5))
+
+        N_off = N_off_1 + N_off_2 + N_off_3 + N_off_4 + N_off_5
+
+        S = (N_on - alpha * N_off) / tf.sqrt(N_on + alpha**2 * N_off)
+        loss = 100.0 - S
         return loss
 
 
@@ -51,7 +57,7 @@ def region_loss(y_pred, y_true):
 @click.option('--restore/--no-restore', default=True)
 def main(start, end, learning_rate, train, network, epochs, restore):
 
-    network = networks.alexnet_region(region_loss, learning_rate=learning_rate)
+    network = networks.alexnet_region(sigma_loss, learning_rate=learning_rate)
 
 
     model = tflearn.DNN(network,
@@ -92,26 +98,23 @@ def main(start, end, learning_rate, train, network, epochs, restore):
         idx = np.array_split(np.arange(0, N), N / 8000)
         dfs = []
         event_counter = 0
-        try:
-            for ids in tqdm(idx):
-                l = ids[0]
-                u = ids[-1]
-                df, images = image_io.load_crab_data(l, u + 1)
-                event_counter += len(df)
-                if len(df) == 0:
-                    continue
-                predictions = model.predict(images)[:, 0]
+        for ids in tqdm(idx):
+            l = ids[0]
+            u = ids[-1]
+            df, images = image_io.load_crab_data(l, u + 1)
+            event_counter += len(df)
+            if len(df) == 0:
+                continue
+            predictions = model.predict(images)[:, 0]
 
-                df['predictions_convnet'] = predictions
-                dfs.append(df)
-        except KeyboardInterrupt:
-            print('stopping execution')
-        finally:
-            print('Concatenating {} data frames'.format(len(dfs)))
-            df = pd.concat(dfs)
-            assert event_counter == len(df)
-            print('Writing {} events to file'.format(event_counter))
-            df.to_hdf('./build/predictions.h5', key='events')
+            df['predictions_convnet'] = predictions
+            dfs.append(df)
+
+        print('Concatenating {} data frames'.format(len(dfs)))
+        df = pd.concat(dfs)
+        assert event_counter == len(df)
+        print('Writing {} events to file'.format(event_counter))
+        df.to_hdf('./build/predictions.h5', key='events')
 
 
 if __name__ == '__main__':
