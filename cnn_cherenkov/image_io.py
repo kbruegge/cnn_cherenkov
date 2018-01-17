@@ -29,6 +29,9 @@ def read_rows(path, start=0, end=1000):
 
 
 def load_crab_data(start=0, end=-1):
+    '''
+    Loads images and crab dl3 data and returns a dataframe and the images.
+    '''
     df, images = read_rows('./data/crab_images.hdf5', start=start, end=end)
     dl3 = fio.read_data('./data/dl3/open_crab_sample_dl3.hdf5', key='events')
     dl3 = dl3.set_index(['night', 'run_id', 'event_num'])
@@ -52,7 +55,7 @@ def load_crab_data(start=0, end=-1):
 
 def create_training_sample(df, images, prediction_threshold=0.8):
     '''
-    Returns array of images X and on-hot encoded labels Y. Both classes equally sampled.
+    Returns array of images X and one-hot encoded labels Y. Both classes equally sampled.
     '''
     df = df.reset_index()
     df['prediction_label'] = np.where(df.gamma_prediction > prediction_threshold, 0, 1)
