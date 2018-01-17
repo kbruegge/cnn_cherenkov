@@ -56,7 +56,7 @@ def create_training_sample(df, images, prediction_threshold=0.8):
     '''
     df = df.reset_index()
     df['prediction_label'] = np.where(df.gamma_prediction > prediction_threshold, 0, 1)
-    
+
     Y = df.prediction_label.values.astype(np.float32)
 
     N = len(df)

@@ -1,10 +1,7 @@
 import image_io
 import networks
 import tflearn
-import numpy as np
-from tqdm import tqdm
 import click
-import pandas as pd
 import os
 
 
@@ -52,28 +49,10 @@ def main(start, end, learning_rate, train, network, epochs):
 
         model.save('./data/model/fact.tflearn')
     else:
-        print('Loading Model')
+        print('Loading Model...')
         model.load('./data/model/fact.tflearn')
-        N = image_io.number_of_images('./data/crab_images.hdf5')
-        idx = np.array_split(np.arange(0, N), N / 8000)
-        dfs = []
-        event_counter = 0
-        for ids in tqdm(idx):
-            l = ids[0]
-            u = ids[-1]
-            df, images = image_io.load_crab_data(l, u+1)
-            event_counter += len(df)
-            if len(df) == 0:
-                continue
-            predictions = model.predict(images)[:, 0]
-
-            df['predictions_convnet'] = predictions
-            dfs.append(df)
-
-        print('Concatenating {} data frames'.format(len(dfs)))
-        df = pd.concat(dfs)
-        assert event_counter == len(df)
-        print('Writing {} events to file'.format(event_counter))
+        network.apply_to_data(model)
+        print('Writing {} events to file...'.format(len(df)))
         df.to_hdf('./build/predictions.h5', key='events')
 
 

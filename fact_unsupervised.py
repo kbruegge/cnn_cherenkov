@@ -1,10 +1,7 @@
 import image_io
 import networks
 import tflearn
-import numpy as np
-from tqdm import tqdm
 import click
-import pandas as pd
 import os
 import tensorflow as tf
 from sklearn import preprocessing
@@ -46,7 +43,7 @@ def sigma_loss(y_pred, y_true):
         N_off = N_off_1 + N_off_2 + N_off_3 + N_off_4 + N_off_5
         #
         S = (N_on - alpha * N_off) / tf.sqrt(N_on + alpha**2 * N_off)
-        loss = 1 - S/tf.sqrt(tf.cast(tf.shape(theta_on)[0], tf.float32))
+        loss = 1 - S / tf.sqrt(tf.cast(tf.shape(theta_on)[0], tf.float32))
         return loss
 
 
@@ -97,30 +94,9 @@ def main(start, end, learning_rate, train, network, epochs, restore):
     else:
         print('Loading Model')
         model.load('./data/model/fact.tflearn')
-        N = image_io.number_of_images('./data/crab_images.hdf5')
-        idx = np.array_split(np.arange(0, N), N / 8000)
-        dfs = []
-        event_counter = 0
-        try:
-            for ids in tqdm(idx):
-                l = ids[0]
-                u = ids[-1]
-                df, images = image_io.load_crab_data(l, u + 1)
-                event_counter += len(df)
-                if len(df) == 0:
-                    continue
-                predictions = model.predict(images)[:, 0]
-
-                df['predictions_convnet'] = predictions
-                dfs.append(df)
-        except KeyboardInterrupt:
-            print('Stopping process..')
-        finally:
-            print('Concatenating {} data frames'.format(len(dfs)))
-            df = pd.concat(dfs)
-            assert event_counter == len(df)
-            print('Writing {} events to file'.format(event_counter))
-            df.to_hdf('./build/predictions.h5', key='events')
+        df = network.apply_to_data(model)
+        print('Writing {} events to file'.format(len(df)))
+        df.to_hdf('./build/predictions.h5', key='events')
 
 
 if __name__ == '__main__':
