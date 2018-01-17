@@ -1,5 +1,4 @@
 import numpy as np
-#from functools import partial
 import photon_stream as ps
 from tqdm import tqdm
 import h5py
@@ -7,7 +6,6 @@ from fact.io import initialize_h5py, append_to_h5py
 from astropy.table import Table
 from glob import glob
 import click
-#from fact.io import read_h5py
 import os
 import pickle
 from joblib import Parallel, delayed
@@ -20,7 +18,7 @@ def take(n, iterable):
     return list(islice(iterable, n))
 
 
-mapping = pickle.load(open('./01_hexagonal_position_dict.p', 'rb'))
+mapping = pickle.load(open('./hexagonal_position_dict.p', 'rb'))
 mapping = np.array([t[1] for t in mapping.items()])
 
 
@@ -32,10 +30,12 @@ def make_image(pixel_mapping, photon_content):
         input_matrix[int(x)][int(y)] = photon_content[i]
     return input_matrix
 
+
 def convert_event(event, roi=[5, 40]):
     imgs = event.photon_stream.image_sequence
     m = imgs[roi[0]:roi[1]].sum(axis=0)
     return make_image(mapping, m)
+
 
 def image_from_event(event):
     night = int(event.observation_info.night)
@@ -44,17 +44,16 @@ def image_from_event(event):
     img = convert_event(event)
     return [night, run, event_num, event.az, event.zd], img
 
+
 def recarray_from_ps_reader(reader):
     rows = []
     imgs = []
 
-    #result = Parallel(n_jobs=16,  backend='multiprocessing')(map(delayed(image_from_event), reader))
     result = list(map(image_from_event, reader))
 
     rows = np.array([r[0] for r in result])
     imgs = np.array([r[1] for r in result])
     columns = [rows[:, i] for i in range(5)]
-    #from IPython import embed; embed()
 
     t = Table(
         [*columns, imgs],
@@ -67,14 +66,13 @@ def recarray_from_ps_reader(reader):
 def write_to_hdf(recarray, filename):
     key = 'events'
     with h5py.File(filename, mode='a') as f:
-        #print('Writing {} events to file'.format(len(recarray)))
         if key not in f:
             initialize_h5py(f, recarray, key=key)
         append_to_h5py(f, recarray, key=key)
 
 
 def convert_file(path):
-    #print('Analyzing {}'.format(photon_stream_file))
+    # print('Analyzing {}'.format(photon_stream_file))
     reader = ps.EventListReader(path)
     try:
         recarray = recarray_from_ps_reader(reader)
@@ -89,8 +87,7 @@ def convert_file(path):
 @click.argument('out_file', type=click.Path(exists=False, dir_okay=False))
 def main(out_file):
     '''
-    Rads all photon_stream files in data/photonstrem/ and converts them to images including
-
+    Reads all photon_stream files in data/photonstrem/ and converts them to images.
     '''
 
     if os.path.exists(out_file):
@@ -99,17 +96,15 @@ def main(out_file):
 
 
     files = sorted(list(glob('./data/photonstream/*.phs.jsonl.gz')))
-    #for photon_stream_file in tqdm(files):
     file_chunks = np.array_split(files, 9)
     for fs in tqdm(file_chunks):
-        results = Parallel(n_jobs=24, verbose=36,  backend='multiprocessing')(map(delayed(convert_file), fs))
+        results = Parallel(n_jobs=24, verbose=36, backend='multiprocessing')(map(delayed(convert_file), fs))
 
         for r in results:
             try:
                 write_to_hdf(r, out_file)
             except:
                 pass
-                #print('Not writing result {} to file'.format(r))
 
         print('Successfully read {} files'.format(len(results)))
 
