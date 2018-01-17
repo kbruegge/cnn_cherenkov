@@ -27,21 +27,24 @@ def sigma_loss(y_pred, y_true):
 
         theta = y_true
         theta_on = theta[:, 0]
+
         theta_off_1 = theta[:, 1]
         theta_off_2 = theta[:, 2]
         theta_off_3 = theta[:, 3]
         theta_off_4 = theta[:, 4]
         theta_off_5 = theta[:, 5]
-
-        N_on = tf.reduce_sum(tf.where(theta_on < on_region_radius_degree, y_pred[:, 0] * theta_on))
-        N_off_1 = tf.reduce_sum(tf.where(theta_off_1 < on_region_radius_degree, (1 - y_pred[:, 0]) * theta_off_1))
-        N_off_2 = tf.reduce_sum(tf.where(theta_off_2 < on_region_radius_degree, (1 - y_pred[:, 0]) * theta_off_2))
-        N_off_3 = tf.reduce_sum(tf.where(theta_off_3 < on_region_radius_degree, (1 - y_pred[:, 0]) * theta_off_3))
-        N_off_4 = tf.reduce_sum(tf.where(theta_off_4 < on_region_radius_degree, (1 - y_pred[:, 0]) * theta_off_4))
-        N_off_5 = tf.reduce_sum(tf.where(theta_off_5 < on_region_radius_degree, (1 - y_pred[:, 0]) * theta_off_5))
-
+        #
+        zeros = tf.zeros(tf.shape(y_pred))[:, 0]
+        N_on = tf.reduce_sum(tf.where(theta_on < on_region_radius_degree, y_pred[:, 0] * theta_on, zeros))
+        N_off_1 = tf.reduce_sum(tf.where(theta_off_1 < on_region_radius_degree, (1 - y_pred[:, 0]) * theta_off_1, zeros))
+        # N_off_1 = tf.reduce_sum(tf.where(theta_off_1 < on_region_radius_degree, (1 - y_pred[:, 0]) * theta_off_1))
+        N_off_2 = tf.reduce_sum(tf.where(theta_off_2 < on_region_radius_degree, (1 - y_pred[:, 0]) * theta_off_2, zeros))
+        N_off_3 = tf.reduce_sum(tf.where(theta_off_3 < on_region_radius_degree, (1 - y_pred[:, 0]) * theta_off_3, zeros))
+        N_off_4 = tf.reduce_sum(tf.where(theta_off_4 < on_region_radius_degree, (1 - y_pred[:, 0]) * theta_off_4, zeros))
+        N_off_5 = tf.reduce_sum(tf.where(theta_off_5 < on_region_radius_degree, (1 - y_pred[:, 0]) * theta_off_5, zeros))
+        #
         N_off = N_off_1 + N_off_2 + N_off_3 + N_off_4 + N_off_5
-
+        #
         S = (N_on - alpha * N_off) / tf.sqrt(N_on + alpha**2 * N_off)
         loss = 100.0 - S
         return loss
