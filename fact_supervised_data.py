@@ -1,5 +1,5 @@
-import image_io
-import networks
+from cnn_cherenkov import image_io
+from cnn_cherenkov import networks
 import tflearn
 import click
 import os
@@ -23,16 +23,16 @@ def main(start, end, learning_rate, train, network, epochs):
         network = networks.simple(learning_rate=learning_rate)
 
     model = tflearn.DNN(network,
-                        checkpoint_path='./data/model/',
+                        checkpoint_path='./data/model/supervised_data/',
                         max_checkpoints=1,
                         tensorboard_verbose=2,
                         )
 
     if train:
         df, images = image_io.load_crab_data(start, end)
-        if os.path.exists('./data/model/fact.tflearn.index'):
+        if os.path.exists('./data/model/supervised_data/fact.tflearn.index'):
             print('Loading Model')
-            model.load('./data/model/fact.tflearn')
+            model.load('./data/model/supervised_data/fact.tflearn')
 
         _, X, Y = image_io.create_training_sample(df, images)
         model.fit(X,
@@ -47,10 +47,10 @@ def main(start, end, learning_rate, train, network, epochs):
                   run_id='fact_tflearn'
                   )
 
-        model.save('./data/model/fact.tflearn')
+        model.save('./data/model/supervised_data/fact.tflearn')
     else:
         print('Loading Model...')
-        model.load('./data/model/fact.tflearn')
+        model.load('./data/model/supervised_data/fact.tflearn')
         network.apply_to_data(model)
         print('Writing {} events to file...'.format(len(df)))
         df.to_hdf('./build/predictions.h5', key='events')
