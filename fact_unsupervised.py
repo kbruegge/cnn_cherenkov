@@ -7,13 +7,38 @@ import click
 import pandas as pd
 import os
 import tensorflow as tf
+from sklearn import preprocessing
+
+
+theta_keys = [
+    'theta_deg',
+    'theta_deg_off_1',
+    'theta_deg_off_2',
+    'theta_deg_off_3',
+    'theta_deg_off_4',
+    'theta_deg_off_4'
+]
 
 
 def region_loss(y_pred, y_true):
     with tf.name_scope(None):
-        import IPython; IPython.embed()
-        
-        return tf.reduce_mean(tf.sum(tf.int(y_pred) * y_true[0]))
+        # N = tf.size(y_pred)
+        # print(y_true.shape)
+        # print(y_pred.shape)
+        # print(N)
+        # theta = tf.reshape(y_true, [512, 6])
+        # print(theta.shape)
+        # distance_on = y_true[:, 0]
+        theta = y_true
+        a = y_pred[:, 0] * theta[:, 0]
+        b = y_pred[:, 1] * theta[:, 1]
+        c = y_pred[:, 1] * theta[:, 2]
+        d = y_pred[:, 1] * theta[:, 3]
+        e = y_pred[:, 1] * theta[:, 4]
+        f = y_pred[:, 1] * theta[:, 5]
+        # d = y_pred[:, 1] * theta[:, 3]
+        loss = tf.reduce_mean(a + b + c + d + e + f)
+        return loss
 
 
 @click.command()
@@ -23,9 +48,10 @@ def region_loss(y_pred, y_true):
 @click.option('--train/--apply', default=True)
 @click.option('-n', '--network', default='alexnet')
 @click.option('-p', '--epochs', default=1)
-def main(start, end, learning_rate, train, network, epochs):
+@click.option('--restore/--no-restore', default=True)
+def main(start, end, learning_rate, train, network, epochs, restore):
 
-    network = networks.alexnet(learning_rate=learning_rate, )
+    network = networks.alexnet_region(region_loss, learning_rate=learning_rate)
 
 
     model = tflearn.DNN(network,
@@ -36,14 +62,16 @@ def main(start, end, learning_rate, train, network, epochs):
 
     if train:
         df, images = image_io.load_crab_data(start, end)
-        if os.path.exists('./data/model/fact.tflearn.index'):
+        if restore and os.path.exists('./data/model/fact.tflearn.index'):
             print('Loading Model')
             model.load('./data/model/fact.tflearn')
 
         df, X, gamma_label = image_io.create_training_sample(df, images)
 
-        Y = df[['theta_deg', 'theta_deg_off_1', 'theta_deg_off_2', 'theta_deg_off_3', 'theta_deg_off_4', 'theta_deg_off_4']]
-
+        Y = df[theta_keys].values
+        min_max_scaler = preprocessing.MinMaxScaler()
+        Y = min_max_scaler.fit_transform(Y)
+        print(Y.shape)
         model.fit(X,
                   Y,
                   n_epoch=epochs,
@@ -67,7 +95,7 @@ def main(start, end, learning_rate, train, network, epochs):
         for ids in tqdm(idx):
             l = ids[0]
             u = ids[-1]
-            df, images = image_io.load_crab_data(l, u+1)
+            df, images = image_io.load_crab_data(l, u + 1)
             event_counter += len(df)
             if len(df) == 0:
                 continue
