@@ -66,7 +66,7 @@ def alexnet(learning_rate=0.001, loss=None):
     network = dropout(network, 0.5)
     network = fully_connected(network, 2, activation='softmax')
     network = regression(network,
-                         optimizer='momentum',
+                         optimizer='adam',
                          loss=loss,
                          learning_rate=learning_rate
                          )

@@ -2,6 +2,7 @@ import numpy as np
 import photon_stream as ps
 from tqdm import tqdm
 import h5py
+from fact.instrument.camera import reorder_softid2chid
 from fact.io import initialize_h5py, append_to_h5py
 from astropy.table import Table
 import click
@@ -18,14 +19,14 @@ def take(n, iterable):
 
 
 mapping = pickle.load(open('./cnn_cherenkov/hexagonal_position_dict.p', 'rb'))
-mapping = np.array([t[1] for t in mapping.items()])
-
+mapping_fact_tools = np.array([t[1] for t in mapping.items()])
+#mapping_ceres = reorder_softid2chid(mapping_fact_tools)
 
 @jit
-def make_image(pixel_mapping, photon_content):
+def make_image(photon_content):
     input_matrix = np.zeros([46, 45])
     for i in range(1440):
-        x, y = pixel_mapping[i]
+        x, y = mapping_fact_tools[i]
         input_matrix[int(x)][int(y)] = photon_content[i]
     return input_matrix
 
@@ -33,7 +34,7 @@ def make_image(pixel_mapping, photon_content):
 def convert_event(event, roi=[5, 40]):
     imgs = event.photon_stream.image_sequence
     m = imgs[roi[0]:roi[1]].sum(axis=0)
-    return make_image(mapping, m)
+    return make_image(m)
 
 
 def image_from_event(event):
@@ -41,12 +42,13 @@ def image_from_event(event):
         night_reuse = int(event.observation_info.night)
         run = int(event.observation_info.run)
         event_num = int(event.observation_info.event)
+
     except AttributeError:
         night_reuse = int(event.simulation_truth.reuse)
         run = int(event.simulation_truth.run)
         event_num = int(event.simulation_truth.event)
 
-    img = convert_event(event)
+    img = convert_event(event,)
     return [night_reuse, run, event_num, event.az, event.zd], img
 
 
@@ -106,7 +108,10 @@ def main(in_files, out_file, n_jobs, n_chunks):
     files = sorted(in_files)
     file_chunks = np.array_split(files, n_chunks)
     for fs in tqdm(file_chunks):
-        results = Parallel(n_jobs=n_jobs, verbose=36, backend='multiprocessing')(map(delayed(convert_file), fs))
+        if n_jobs != 0:
+            results = Parallel(n_jobs=n_jobs, verbose=36, backend='multiprocessing')(map(delayed(convert_file), fs))
+        else:
+            results = map(convert_file, fs)
 
         for r in results:
             try:

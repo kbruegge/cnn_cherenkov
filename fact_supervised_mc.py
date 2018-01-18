@@ -84,8 +84,8 @@ def main(start, end, learning_rate, train, network, epochs):
                   shuffle=True,
                   show_metric=True,
                   batch_size=512,
-                  snapshot_step=100,
-                  snapshot_epoch=False,
+                  snapshot_step=50,
+                  snapshot_epoch=True,
                   run_id='fact_tflearn'
                   )
 
@@ -93,7 +93,7 @@ def main(start, end, learning_rate, train, network, epochs):
     else:
         print('Loading Model...')
         model.load(model_path)
-        df = network.apply_to_data(model)
+        df = networks.apply_to_data(model)
         print('Writing {} events to file...'.format(len(df)))
         df.to_hdf('./build/predictions_supervised_mc.hdf5', key='events')
 
