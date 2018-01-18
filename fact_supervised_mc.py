@@ -70,7 +70,7 @@ def main(start, end, learning_rate, train, network, epochs):
 
         X, Y = shuffle(X, Y)
 
-        import IPython; IPython.embed()
+        # import IPython; IPython.embed()
 
 
         if os.path.exists('{}.index'.format(model_path)):
