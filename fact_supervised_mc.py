@@ -5,10 +5,6 @@ import click
 import os
 import pandas as pd
 import h5py
-import numpy as np
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.utils import shuffle
-
 
 
 def read_rows(path, start=0, end=1000):
@@ -55,23 +51,7 @@ def main(start, end, learning_rate, train, network, epochs):
                         )
 
     if train:
-        df_gammas, images_gammas = read_rows('./data/gamma_images.hdf5', start=start, end=end)
-        df_protons, images_protons = read_rows('./data/proton_images.hdf5', start=start, end=end)
-
-        images_gammas = np.transpose(images_gammas, axes=[0, 2, 1])
-        images_protons = np.transpose(images_protons, axes=[0, 2, 1])
-
-        images_gammas = image_io.scale_images(images_gammas)
-        images_protons = image_io.scale_images(images_protons)
-        X = np.vstack([images_gammas, images_protons])
-
-        Y = np.append(np.ones(len(df_gammas)), np.zeros(len(df_protons)))
-        Y = OneHotEncoder().fit_transform(Y.reshape(-1, 1)).toarray()
-
-        X, Y = shuffle(X, Y)
-
-        # import IPython; IPython.embed()
-
+        X, Y = image_io.get_mc_training_data(start=start, end=end)
 
         if os.path.exists('{}.index'.format(model_path)):
             print('Loading Model')

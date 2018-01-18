@@ -3,13 +3,33 @@ import pandas as pd
 import fact.io as fio
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.utils import shuffle
+
+
+def get_mc_training_data(start=0, end=-1):
+    df_gammas, images_gammas = read_rows('./data/gamma_images.hdf5', start=start, end=end)
+    df_protons, images_protons = read_rows('./data/proton_images.hdf5', start=start, end=end)
+
+    # images_gammas = np.transpose(images_gammas, axes=[0, 2, 1])
+    # images_protons = np.transpose(images_protons, axes=[0, 2, 1])
+
+    images_gammas = scale_images(images_gammas)
+    images_protons = scale_images(images_protons)
+    X = np.vstack([images_gammas, images_protons])
+
+    Y = np.append(np.ones(len(df_gammas)), np.zeros(len(df_protons)))
+    Y = OneHotEncoder().fit_transform(Y.reshape(-1, 1)).toarray()
+
+    X, Y = shuffle(X, Y)
+
+    return X, Y
 
 
 def scale_images(images):
     images[images < 3] = 0
     qmax = np.percentile(images, q=99.5, axis=(1, 2))
     a = images / qmax[:, np.newaxis, np.newaxis]
-    return a.reshape((len(images), 45, 46, -1))
+    return a.reshape((len(images), 46, 45, -1))
 
 
 def read_rows(path, start=0, end=1000):
