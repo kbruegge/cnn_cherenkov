@@ -14,27 +14,20 @@ def simple(learning_rate=0.001, loss=None):
 
     print('Building Simple Net with loss {}'.format(loss))
 
-    network = input_data(shape=[None, 45, 46, 1])
+    network = input_data(shape=[None, 46, 45, 1])
 
-    network = conv_2d(network, 5, 10, activation='relu')
+    network = conv_2d(network, 8, 64, activation='relu', name='conv1')
     network = max_pool_2d(network, 3, strides=1)
 
-    network = conv_2d(network, 3, 10, activation='relu')
+    network = conv_2d(network, 4, 32, activation='relu', name='conv2')
     network = max_pool_2d(network, 3, strides=1)
 
-    network = conv_2d(network, 5, 10, activation='relu')
-    network = max_pool_2d(network, 3, strides=1)
 
-    network = conv_2d(network, 3, 10, activation='relu')
-    network = max_pool_2d(network, 3, strides=1)
-
-    network = fully_connected(network, 100, activation='relu')
+    network = fully_connected(network, 100, activation='relu', name='fc1')
     network = dropout(network, 0.5)
-    network = fully_connected(network, 100, activation='relu')
+    network = fully_connected(network, 100, activation='relu', name='fc2')
     network = dropout(network, 0.5)
-    network = fully_connected(network, 100, activation='relu')
-    network = dropout(network, 0.5)
-    network = fully_connected(network, 2, activation='softmax')
+    network = fully_connected(network, 2, activation='softmax', name='fc3')
     network = regression(network,
                          optimizer='adam',
                          loss=loss,
@@ -48,11 +41,11 @@ def alexnet(learning_rate=0.001, loss=None):
         loss = 'binary_crossentropy'
 
     print('Building AlexNet with loss {}'.format(loss))
-    network = input_data(shape=[None, 45, 46, 1])
-    network = conv_2d(network, 96, 11, strides=4, activation='relu')
+    network = input_data(shape=[None, 46, 45, 1])
+    network = conv_2d(network, 96, 11, strides=4, activation='relu', name='conv1')
     network = max_pool_2d(network, 3, strides=2)
     network = local_response_normalization(network)
-    network = conv_2d(network, 256, 5, activation='relu')
+    network = conv_2d(network, 256, 5, activation='relu', name='conv2')
     network = max_pool_2d(network, 3, strides=2)
     network = local_response_normalization(network)
     network = conv_2d(network, 384, 3, activation='relu')
@@ -75,7 +68,7 @@ def alexnet(learning_rate=0.001, loss=None):
 
 def alexnet_region(loss, learning_rate=0.001):
     print('Building AlexNet with loss {}'.format(loss))
-    network = input_data(shape=[None, 45, 46, 1])
+    network = input_data(shape=[None, 46, 45, 1])
     network = conv_2d(network, 96, 11, strides=4, activation='relu')
     network = max_pool_2d(network, 3, strides=2)
     network = local_response_normalization(network)
