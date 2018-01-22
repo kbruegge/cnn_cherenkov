@@ -1,38 +1,18 @@
 from cnn_cherenkov import image_io
 from cnn_cherenkov import networks
+from cnn_cherenkov import plotting
 import tflearn
 import click
 import os
-import pandas as pd
-import h5py
-
-
-def read_rows(path, start=0, end=1000):
-    '''
-    read given rows from carb images.
-    return dataframe containg high level infor and iimages (df, images)
-    '''
-    f = h5py.File(path)
-    night = f['events/night'][start:end]
-    run = f['events/run_id'][start:end]
-    event = f['events/event_num'][start:end]
-    az = f['events/az'][start:end]
-    zd = f['events/zd'][start:end]
-
-    df = pd.DataFrame({'night': night, 'run_id': run, 'event_num': event, 'zd': zd, 'az': az, })
-    return df, f['events/image'][start:end]
-
-
-
 
 @click.command()
 @click.option('-s', '--start', default=0)
 @click.option('-e', '--end', default=-1)
 @click.option('-l', '--learning_rate', default=0.001)
-@click.option('--train/--apply', default=True)
+@click.option('-o', '--operation', default='train', type=click.Choice(['train', 'apply', 'plot']))
 @click.option('-n', '--network', default='alexnet')
 @click.option('-p', '--epochs', default=1)
-def main(start, end, learning_rate, train, network, epochs):
+def main(start, end, learning_rate, operation, network, epochs):
     # config = tf.ConfigProto(gpu_options = tf.GPUOptions(allow_growth = True))
     # session = tf.Session(config=config)
     checkpoint_path = './data/model/supervised_mc/'
@@ -47,10 +27,10 @@ def main(start, end, learning_rate, train, network, epochs):
     model = tflearn.DNN(network,
                         checkpoint_path=checkpoint_path,
                         max_checkpoints=1,
-                        tensorboard_verbose=2,
+                        tensorboard_verbose=3,
                         )
 
-    if train:
+    if operation == 'train':
         X, Y = image_io.get_mc_training_data(start=start, end=end)
 
         if os.path.exists('{}.index'.format(model_path)):
@@ -70,13 +50,20 @@ def main(start, end, learning_rate, train, network, epochs):
                   )
 
         model.save(model_path)
-    else:
+    elif operation=='apply':
         print('Loading Model...')
         model.load(model_path)
+        from IPython import embed; embed()
         df = networks.apply_to_data(model)
         print('Writing {} events to file...'.format(len(df)))
         df.to_hdf('./build/predictions_supervised_mc.hdf5', key='events')
 
-
+    elif operation=='plot':
+        import matplotlib.pyplot as plt
+        model.load(model_path)
+        fig, [ax1, ax2] = plt.subplots(1, 2, figsize=(10, 20))
+        plotting.display_convolutions(model, 'conv1', axis=ax1)
+        plotting.display_convolutions(model, 'conv2', axis=ax2)
+        plt.show()
 if __name__ == '__main__':
     main()

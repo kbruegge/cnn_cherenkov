@@ -5,12 +5,21 @@ import numpy as np
 df, images = image_io.load_crab_data(0, 10000)
 X, Y = image_io.get_mc_training_data(0, 10000)
 
-fig, [ax1, ax2, ax3] = plt.subplots(3, 1)
-_, b, _ = ax1.hist(np.log10(X.sum(axis=(1, 2, 3))), bins=100, normed=True)
-ax1.hist(np.log10(images.sum(axis=(1, 2, 3))), bins=b, alpha=0.5, normed=True)
+gammas = X[Y[:, 0]==1]
+protons = X[Y[:, 1]==1]
+
+fig, [[ax1, ax2],[ax3, ax4]] = plt.subplots(2, 2)
+_, b, _ = ax1.hist(np.log10(protons.sum(axis=(1, 2, 3))), bins=100, normed=True, label='protons')
+ax1.hist(np.log10(gammas.sum(axis=(1, 2, 3))), bins=b, alpha=0.5, normed=True, label='gammas')
+ax1.hist(np.log10(images.sum(axis=(1, 2, 3))), bins=b, alpha=0.5, normed=True, label='data')
+ax1.legend()
+
+_, b, _ = ax2.hist((protons.std(axis=(1, 2, 3))), bins=100, normed=True, label='protons')
+ax2.hist((gammas.std(axis=(1, 2, 3))), bins=b, alpha=0.5, normed=True, label='gammas')
+ax2.hist((images.std(axis=(1, 2, 3))), bins=b, alpha=0.5, normed=True, label='data')
+ax2.legend()
 
 
-ax2.imshow(X[0, :, :, 0])
-ax3.imshow(images[0, :, :, 0])
+ax3.imshow(protons[0, :, :, 0])
+ax4.imshow(images[0, :, :, 0])
 plt.show()
-# import IPython; IPython.embed()
