@@ -29,7 +29,6 @@ def scale_images(images):
     images[images < 2] = 0
     qmax = np.percentile(images, q=99.8, axis=(1, 2))
     a = images / qmax[:, np.newaxis, np.newaxis]
-    #a = images / qmax
     return a.reshape((len(images), 46, 45, -1))
 
 

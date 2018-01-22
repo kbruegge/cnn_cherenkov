@@ -1,7 +1,6 @@
 from tflearn.layers.core import input_data, dropout, fully_connected
 from tflearn.layers.conv import conv_2d, max_pool_2d
 from tflearn.layers.normalization import local_response_normalization
-from tflearn.layers.estimator import regression
 from . import image_io
 import numpy as np
 from tqdm import tqdm
@@ -28,11 +27,6 @@ def simple(learning_rate=0.001, loss=None):
     network = fully_connected(network, 100, activation='relu', name='fc2')
     network = dropout(network, 0.5)
     network = fully_connected(network, 2, activation='softmax', name='fc3')
-    network = regression(network,
-                         optimizer='adam',
-                         loss=loss,
-                         learning_rate=learning_rate
-                         )
     return network
 
 
@@ -58,11 +52,6 @@ def alexnet(learning_rate=0.001, loss=None):
     network = fully_connected(network, 4096, activation='tanh')
     network = dropout(network, 0.5)
     network = fully_connected(network, 2, activation='softmax')
-    network = regression(network,
-                         optimizer='adam',
-                         loss=loss,
-                         learning_rate=learning_rate
-                         )
     return network
 
 
@@ -85,11 +74,6 @@ def alexnet_region(loss, learning_rate=0.001):
     network = fully_connected(network, 4096, activation='tanh')
     network = dropout(network, 0.5)
     network = fully_connected(network, 6, activation='softmax')
-    network = regression(network,
-                         optimizer='momentum',
-                         loss=loss,
-                         learning_rate=learning_rate
-                         )
     return network
 
 
