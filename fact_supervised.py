@@ -69,7 +69,8 @@ def clear():
     click.confirm('Do you want to delete all pretrained models?', abort=True)
     import shutil
     shutil.rmtree(checkpoint_path)
-
+    import os
+    os.makedirs(checkpoint_path, exist_ok=True)
 
 
 
