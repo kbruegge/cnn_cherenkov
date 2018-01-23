@@ -1,8 +1,6 @@
 from cnn_cherenkov import image_io
 from cnn_cherenkov import networks
 from cnn_cherenkov import plotting
-from tflearn.layers.estimator import regression
-import tflearn
 import click
 import os
 
@@ -13,6 +11,7 @@ predictions_path = './build/predictions_supervised_mc.hdf5'
 
 
 def load_model(network):
+    import tflearn
     model = tflearn.DNN(network,
                         checkpoint_path=checkpoint_path,
                         max_checkpoints=1,
@@ -80,8 +79,10 @@ def clear():
 @click.option('--mc/--data', default=True)
 @click.option('-n', '--number_of_training_samples', default=100000)
 @click.option('-b', '--batch_size', default=512)
+@click.option('-o', '--optimizer', type=click.Choice(['adam', 'sgd']), default='adam')
 @click.pass_context
-def train(ctx, epochs, learning_rate, mc, number_of_training_samples, batch_size):
+def train(ctx, epochs, learning_rate, mc, number_of_training_samples, batch_size, optimizer):
+    from tflearn.layers.estimator import regression
     network = ctx.obj['network']
 
     if mc:
@@ -93,7 +94,7 @@ def train(ctx, epochs, learning_rate, mc, number_of_training_samples, batch_size
         _, X, Y = image_io.create_training_sample(df, images)
 
     network = regression(network,
-                         optimizer='adam',
+                         optimizer=optimizer,
                          loss='binary_crossentropy',
                          learning_rate=learning_rate
                          )
