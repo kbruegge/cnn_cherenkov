@@ -63,6 +63,18 @@ def plot(ctx, output_path, cmap):
 
 
 @cli.command()
+def clear():
+    '''
+    Clear all checkpoints and trained models
+    '''
+    click.confirm('Do you want to delete all pretrained models?', abort=True)
+    import shutil
+    shutil.rmtree(checkpoint_path)
+
+
+
+
+@cli.command()
 @click.option('-e', '--epochs', default=1)
 @click.option('-l', '--learning_rate', default=0.001)
 @click.option('--mc/--data', default=True)
