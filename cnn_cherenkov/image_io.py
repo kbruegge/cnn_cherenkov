@@ -6,12 +6,10 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.utils import shuffle
 
 
-def get_mc_training_data(start=0, end=-1):
-    df_gammas, images_gammas = read_rows('./data/gamma_images.hdf5', start=start, end=end)
-    df_protons, images_protons = read_rows('./data/proton_images.hdf5', start=start, end=end)
-
-    # images_gammas = np.transpose(images_gammas, axes=[0, 2, 1])
-    # images_protons = np.transpose(images_protons, axes=[0, 2, 1])
+def load_mc_training_data(N=-1):
+    N = N // 2
+    df_gammas, images_gammas = read_rows('./data/gamma_images.hdf5', N=N)
+    df_protons, images_protons = read_rows('./data/proton_images.hdf5', N=N)
 
     images_gammas = scale_images(images_gammas)
     images_protons = scale_images(images_protons)
@@ -32,72 +30,82 @@ def scale_images(images):
     return a.reshape((len(images), 46, 45, -1))
 
 
-def read_rows(path, start=0, end=1000):
+def read_rows(path, N=-1):
     '''
-    read given rows from carb images.
-    return dataframe containg high level infor and iimages (df, images)
+    read given rows from hdf5 images.
+    return dataframe containg high level information and images (df, images)
     '''
     f = h5py.File(path)
-    night = f['events/night'][start:end]
-    run = f['events/run_id'][start:end]
-    event = f['events/event_num'][start:end]
-    az = f['events/az'][start:end]
-    zd = f['events/zd'][start:end]
+    if N > 1:
+        night = f['events/night'][0:N]
+        run = f['events/run_id'][0:N]
+        event = f['events/event_num'][0:N]
+        az = f['events/az'][0:N]
+        zd = f['events/zd'][0:N]
+        images = f['events/image'][0:N]
+    else:
+        night = f['events/night'][:]
+        run = f['events/run_id'][:]
+        event = f['events/event_num'][:]
+        az = f['events/az'][:]
+        zd = f['events/zd'][:]
+        images = f['events/image'][:]
+
 
     df = pd.DataFrame({'night': night, 'run_id': run, 'event_num': event, 'zd': zd, 'az': az, })
-    return df, f['events/image'][start:end]
+    return df, images
 
 
-def load_crab_data(start=0, end=-1):
-    '''
-    Loads images and crab dl3 data and returns a dataframe and the images.
-    '''
-    df, images = read_rows('./data/crab_images.hdf5', start=start, end=end)
-    dl3 = fio.read_data('./data/dl3/open_crab_sample_dl3.hdf5', key='events')
-    dl3 = dl3.set_index(['night', 'run_id', 'event_num'])
-
-    df['int_index'] = df.index
-    df = df.set_index(['night', 'run_id', 'event_num'])
-
-
-    data = df.join(dl3, how='inner')
-    print('Events in open data sample: {}, events in photons_stream: {}, events in joined data: {}'.format(len(dl3), len(df), len(data)))
-
-    if len(data) == 0:
-        return [], []
-
-    images = scale_images(images[data.int_index])
-
-    assert len(images) == len(data)
-
-    return data, images
-
-
-def create_training_sample(df, images, prediction_threshold=0.8):
+def load_crab_training_data(N=-1, prediction_threshold=0.8):
     '''
     Returns array of images X and one-hot encoded labels Y. Both classes equally sampled.
     '''
-    df = df.reset_index()
-    df['prediction_label'] = np.where(df.gamma_prediction > prediction_threshold, 0, 1)
 
-    Y = df.prediction_label.values.astype(np.float32)
+    dl3 = fio.read_data('./data/dl3/open_crab_sample_dl3.hdf5', key='events')
+    dl3 = dl3.set_index(['night', 'run_id', 'event_num'])
 
-    N = len(df)
-    ids_true = df[df.prediction_label == 1].index.values
-    ids_true = np.random.choice(ids_true, N // 2)
-    ids_false = df[df.prediction_label == 0].index.values
-    ids_false = np.random.choice(ids_false, N // 2)
-    ids = np.append(ids_false, ids_true)
+    f = h5py.File('./data/crab_images.hdf5')
+    night = f['events/night'][:]
+    run = f['events/run_id'][:]
+    event = f['events/event_num'][:]
+
+    df = pd.DataFrame({'night': night, 'run_id': run, 'event_num': event})
+    df['int_index'] = df.index
+    df = df.set_index(['night', 'run_id', 'event_num'])
+
+    data = df.join(dl3, how='inner')
+
+    indices = data.int_index.values
+    data = data.set_index(indices)
+
+    if N > 0:
+        indices = np.random.choice(indices, N, replace=False)
+
+    indices = list(sorted(indices))
+    images = f['events/image'][indices]
+
+    data = data.loc[indices]
+    data = data.reset_index()
+
+    gammas = data[data.gamma_prediction >= 0.8]
+    protons = data[data.gamma_prediction < 0.8]
+
+    ids_gamma = np.random.choice(gammas.index.values, N // 2)
+    ids_proton = np.random.choice(protons.index.values, N // 2)
+    ids = np.append(ids_gamma, ids_proton)
 
     X = images[ids]
-    Y = Y[ids]
-    df = df.copy().loc[ids]
+    Y = np.where(data.loc[ids].gamma_prediction > 0.8, 1.0, 0.0)
+    df = data.copy().loc[ids]
 
-    print('Loaded {} positive labels and {} negative labels'.format(
-        np.sum(Y), N - np.sum(Y)))
+    print('Loaded {} positive labels and {} negative labels'.format(np.sum(Y), N - np.sum(Y)))
+
     Y = OneHotEncoder().fit_transform(Y.reshape(-1, 1)).toarray()
-    return df, X, Y
 
+    df, X, Y = shuffle(df, X, Y)
+    X = scale_images(X)
+
+    return df, X, Y
 
 
 

@@ -88,11 +88,10 @@ def train(ctx, epochs, learning_rate, mc, number_of_training_samples, batch_size
 
     if mc:
         print('Loading simulated data.')
-        X, Y = image_io.get_mc_training_data(end=number_of_training_samples)
+        X, Y = image_io.load_mc_training_data(N=number_of_training_samples)
     else:
         print('Loading Crab data.')
-        df, images = image_io.load_crab_data(end=number_of_training_samples)
-        _, X, Y = image_io.create_training_sample(df, images)
+        _, X, Y = image_io.load_crab_training_data(N=number_of_training_samples)
 
     network = regression(network,
                          optimizer=optimizer,
@@ -108,7 +107,7 @@ def train(ctx, epochs, learning_rate, mc, number_of_training_samples, batch_size
               shuffle=True,
               show_metric=True,
               batch_size=batch_size,
-              snapshot_step=50,
+              snapshot_step=25,
               snapshot_epoch=True,
               run_id='fact_tflearn'
               )
