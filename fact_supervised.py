@@ -6,7 +6,7 @@ import os
 
 
 model_path = './data/model/supervised/fact.tflearn'
-checkpoint_path = './data/model/supervised/fact'
+checkpoint_path = './data/model/supervised'
 predictions_path = './build/predictions_supervised_mc.hdf5'
 
 
