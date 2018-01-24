@@ -26,7 +26,7 @@ def simple(learning_rate=0.001, loss=None):
 
 
 def alexnet(learning_rate=0.001, loss=None):
-    network = input_data(shape=[None, 46, 45, 1])
+    network = input_data(shape=[None, 45, 46, 1])
     network = conv_2d(network, 96, 11, strides=4, activation='relu', name='conv1')
     network = max_pool_2d(network, 3, strides=2)
     network = local_response_normalization(network)
