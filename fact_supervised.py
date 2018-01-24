@@ -5,8 +5,8 @@ import click
 import os
 
 
-model_path = './data/model/supervised/fact.tflearn.index'
-checkpoint_path = './data/model/supervised/'
+model_path = './data/model/supervised/fact.tflearn'
+checkpoint_path = './data/model/supervised/fact'
 predictions_path = './build/predictions_supervised_mc.hdf5'
 
 
@@ -18,10 +18,12 @@ def load_model(network):
                         tensorboard_verbose=3,
                         )
 
-    if os.path.exists(model_path):
+    p = '{}.index'.format(model_path)
+    if os.path.exists(p):
         print('Loading Model')
         model.load(model_path)
-
+    else:
+        print('No model to load. Starting from scratch')
     return model
 
 
