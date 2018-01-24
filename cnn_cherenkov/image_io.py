@@ -82,7 +82,10 @@ def load_crab_training_data(N=-1, prediction_threshold=0.8):
 
     if N > 0:
         indices = indices[:N]
+    else:
+        N = len(indices)
 
+    # import IPython; IPython.embed()
 
     print('loading {} images'.format(len(indices)))
     images = load_images_with_index(indices)
@@ -129,23 +132,24 @@ def load_images_with_index(indices, path='./data/crab_images.hdf5'):
     '''
     f = h5py.File(path)
 
-    # sort indeces and put them into batches
-    indices = list(sorted(indices))
+    # create selections
     N = indices[-1]
-    number_of_sections = max(N / 10000, 1)
+    idx = np.arange(0, N + 1)
+    mask = np.zeros_like(idx, dtype=np.bool)
+    mask[indices] = True
 
-    # create sections from index array
-    idx = np.array_split(indices, number_of_sections)
-    # loop over batches
+    # split into batches
+    number_of_sections = max(N / 10000, 1)
+    idx = np.array_split(np.arange(0, N + 1), number_of_sections)
+    masks = np.array_split(mask, number_of_sections)
+
     images = []
-    for ids in tqdm(idx):
+    for ids, selection in tqdm(zip(idx, masks)):
         l = ids[0]
         u = ids[-1]
-        # read all images from l to u (inclusive)
-        selected_images = f['events/image'][l:u + 1][ids]
+        selected_images = f['events/image'][l:u + 1][selection]
         images.append(selected_images)
 
-    # stack list of arrays and return
     return np.vstack(images)
 
 
