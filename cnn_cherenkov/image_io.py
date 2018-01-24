@@ -197,6 +197,5 @@ def apply_to_data(model):
     finally:
         print('Concatenating {} data frames'.format(len(dfs)))
         df = pd.concat(dfs)
-        from IPython import embed; embed()
         assert event_counter == len(df)
         return df
