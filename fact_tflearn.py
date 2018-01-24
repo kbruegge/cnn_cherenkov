@@ -180,8 +180,8 @@ def main(start, end, learning_rate, train, network, epochs):
                   shuffle=True,
                   show_metric=True,
                   batch_size=512,
-                  snapshot_step=100,
-                  snapshot_epoch=False,
+                  snapshot_step=25,
+                  snapshot_epoch=True,
                   run_id='fact_tflearn'
                   )
 
