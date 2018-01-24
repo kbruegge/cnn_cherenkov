@@ -3,11 +3,6 @@ from cnn_cherenkov import networks
 from cnn_cherenkov import plotting
 import click
 import os
-import numpy as np
-#import fact.io as fio
-#from sklearn.preprocessing import OneHotEncoder
-#import h5py
-#import pandas as pd
 
 
 model_path = './data/model/supervised/fact.tflearn'
@@ -128,7 +123,7 @@ def train(ctx, epochs, learning_rate, mc, number_of_training_samples, batch_size
 def apply(ctx):
     network = ctx.obj['network']
     model = load_model(network)
-    df = networks.apply_to_data(model)
+    df = image_io.apply_to_data(model)
     print('Writing {} events to file {}'.format(len(df), predictions_path))
     df.to_hdf(predictions_path, key='events')
 

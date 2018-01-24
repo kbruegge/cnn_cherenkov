@@ -21,7 +21,7 @@ def main(predictions, threshold, theta_cut, net):
     alpha = 0.2
     limits = [0, 0.3]
     df = fio.read_data(predictions, key='events')
-
+    print(df.columns)
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
     if net:

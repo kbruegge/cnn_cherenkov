@@ -15,7 +15,7 @@ def main(predictions, net):
     else:
         print('using standart predictions')
         d = df.gamma_prediction
-    plt.hist(d, bins=np.linspace(0, 1, 50))
+    plt.hist(d.dropna(), bins=np.linspace(0, 1, 50))
     plt.show()
 
 

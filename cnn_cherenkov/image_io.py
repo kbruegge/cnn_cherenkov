@@ -154,13 +154,25 @@ def load_images_with_index(indices, path='./data/crab_images.hdf5'):
 
 
 def load_crab_data(start=0, end=1000,):
+
+    dl3 = fio.read_data('./data/dl3/open_crab_sample_dl3.hdf5', key='events')
+    dl3 = dl3.set_index(['night', 'run_id', 'event_num'])
+
     f = h5py.File('./data/crab_images.hdf5')
     night = f['events/night'][start:end]
     run = f['events/run_id'][start:end]
     event = f['events/event_num'][start:end]
     images = f['events/image'][start:end]
+
     df = pd.DataFrame({'night': night, 'run_id': run, 'event_num': event})
-    return df, images
+    df['int_index'] = df.index
+    df = df.set_index(['night', 'run_id', 'event_num'])
+
+
+    data = df.join(dl3, how='inner')
+    images = scale_images(images[data.int_index])
+
+    return data, images
 
 
 def apply_to_data(model):
@@ -176,7 +188,7 @@ def apply_to_data(model):
             event_counter += len(df)
             if len(df) == 0:
                 continue
-            predictions = model.predict(images)[:, 0]
+            predictions = model.predict(images)[:, 1]
 
             df['predictions_convnet'] = predictions
             dfs.append(df)
@@ -185,5 +197,6 @@ def apply_to_data(model):
     finally:
         print('Concatenating {} data frames'.format(len(dfs)))
         df = pd.concat(dfs)
+        from IPython import embed; embed()
         assert event_counter == len(df)
         return df
