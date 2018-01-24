@@ -65,29 +65,3 @@ def alexnet_region(loss, learning_rate=0.001):
     network = dropout(network, 0.5)
     network = fully_connected(network, 6, activation='softmax')
     return network
-
-
-def apply_to_data(model):
-    N = image_io.number_of_images('./data/crab_images.hdf5')
-    idx = np.array_split(np.arange(0, N), N / 8000)
-    dfs = []
-    event_counter = 0
-    try:
-        for ids in tqdm(idx):
-            l = ids[0]
-            u = ids[-1]
-            df, images = image_io.load_crab_data(l, u + 1)
-            event_counter += len(df)
-            if len(df) == 0:
-                continue
-            predictions = model.predict(images)[:, 0]
-
-            df['predictions_convnet'] = predictions
-            dfs.append(df)
-    except KeyboardInterrupt:
-        print('Stopping process..')
-    finally:
-        print('Concatenating {} data frames'.format(len(dfs)))
-        df = pd.concat(dfs)
-        assert event_counter == len(df)
-        return df

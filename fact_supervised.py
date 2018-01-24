@@ -93,7 +93,6 @@ def train(ctx, epochs, learning_rate, mc, number_of_training_samples, batch_size
         print('Loading Crab data.')
         _, X, Y = image_io.load_crab_training_data(N=number_of_training_samples)
 
-    from IPython import embed; embed()
     network = regression(network,
                          optimizer=optimizer,
                          loss='binary_crossentropy',

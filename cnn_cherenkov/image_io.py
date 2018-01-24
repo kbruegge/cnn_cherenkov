@@ -4,6 +4,7 @@ import fact.io as fio
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.utils import shuffle
+from tqdm import tqdm
 
 
 def load_mc_training_data(N=-1):
@@ -18,8 +19,7 @@ def load_mc_training_data(N=-1):
     Y = np.append(np.ones(len(df_gammas)), np.zeros(len(df_protons)))
     Y = OneHotEncoder().fit_transform(Y.reshape(-1, 1)).toarray()
 
-    #X, Y = shuffle(X, Y)
-    print('wow not teh shuffling')
+    X, Y = shuffle(X, Y)
     return X, Y
 
 
@@ -27,7 +27,6 @@ def scale_images(images):
     images[images < 3] = 0
     qmax = np.percentile(images, q=99.5, axis=(1, 2))
     a = images / qmax[:, np.newaxis, np.newaxis]
-    #a = images[:, :, :, np.newaxis]
     return a.reshape((len(images), 46, 45, -1))
 
 
@@ -65,7 +64,6 @@ def load_crab_training_data(N=-1, prediction_threshold=0.8):
     dl3 = fio.read_data('./data/dl3/open_crab_sample_dl3.hdf5', key='events')
     dl3 = dl3.set_index(['night', 'run_id', 'event_num'])
 
-    print('Reading crab image index')
     f = h5py.File('./data/crab_images.hdf5')
     night = f['events/night'][:]
     run = f['events/run_id'][:]
@@ -75,22 +73,20 @@ def load_crab_training_data(N=-1, prediction_threshold=0.8):
     df['int_index'] = df.index
     df = df.set_index(['night', 'run_id', 'event_num'])
 
-    print('joining crab data with analysis results')
     data = df.join(dl3, how='inner')
 
     indices = data.int_index.values
     data = data.set_index(indices)
 
+    indices = list(sorted(indices))
+
     if N > 0:
         indices = indices[:N]
 
-    print('sorting index')
-    indices = list(sorted(indices))
 
     print('loading {} images'.format(len(indices)))
-    images = f['events/image'][indices]
+    images = load_images_with_index(indices)
 
-    print('selecting types')
     data = data.loc[indices]
     data = data.reset_index()
 
@@ -122,3 +118,68 @@ def number_of_images(path):
     '''
     f = h5py.File(path)
     return len(f['events/night'])
+
+
+def load_images_with_index(indices, path='./data/crab_images.hdf5'):
+    '''
+    Gets images from file given by path. Reads all images in batches of 10000.
+    All images in one batch are read and then selected using the index. This is about two
+    orders of magnitude faster then using the indices to select from the h5py object directly
+    for some reason.
+    '''
+    f = h5py.File(path)
+
+    # sort indeces and put them into batches
+    indices = list(sorted(indices))
+    N = indices[-1]
+    number_of_sections = max(N / 10000, 1)
+
+    # create sections from index array
+    idx = np.array_split(indices, number_of_sections)
+    # loop over batches
+    images = []
+    for ids in tqdm(idx):
+        l = ids[0]
+        u = ids[-1]
+        # read all images from l to u (inclusive)
+        selected_images = f['events/image'][l:u + 1][ids]
+        images.append(selected_images)
+
+    # stack list of arrays and return
+    return np.vstack(images)
+
+
+def load_crab_data(start=0, end=1000,):
+    f = h5py.File('./data/crab_images.hdf5')
+    night = f['events/night'][start:end]
+    run = f['events/run_id'][start:end]
+    event = f['events/event_num'][start:end]
+    images = f['events/image'][start:end]
+    df = pd.DataFrame({'night': night, 'run_id': run, 'event_num': event})
+    return df, images
+
+
+def apply_to_data(model):
+    N = number_of_images('./data/crab_images.hdf5')
+    idx = np.array_split(np.arange(0, N), N / 8000)
+    dfs = []
+    event_counter = 0
+    try:
+        for ids in tqdm(idx):
+            l = ids[0]
+            u = ids[-1]
+            df, images = load_crab_data(l, u + 1)
+            event_counter += len(df)
+            if len(df) == 0:
+                continue
+            predictions = model.predict(images)[:, 0]
+
+            df['predictions_convnet'] = predictions
+            dfs.append(df)
+    except KeyboardInterrupt:
+        print('Stopping process..')
+    finally:
+        print('Concatenating {} data frames'.format(len(dfs)))
+        df = pd.concat(dfs)
+        assert event_counter == len(df)
+        return df
