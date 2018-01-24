@@ -80,7 +80,7 @@ def clear():
 @click.option('--mc/--data', default=True)
 @click.option('-n', '--number_of_training_samples', default=100000)
 @click.option('-b', '--batch_size', default=512)
-@click.option('-o', '--optimizer', type=click.Choice(['adam', 'sgd']), default='adam')
+@click.option('-o', '--optimizer', type=click.Choice(['adam', 'momentum', 'sgd']), default='adam')
 @click.pass_context
 def train(ctx, epochs, learning_rate, mc, number_of_training_samples, batch_size, optimizer):
     from tflearn.layers.estimator import regression
@@ -93,6 +93,7 @@ def train(ctx, epochs, learning_rate, mc, number_of_training_samples, batch_size
         print('Loading Crab data.')
         _, X, Y = image_io.load_crab_training_data(N=number_of_training_samples)
 
+    from IPython import embed; embed()
     network = regression(network,
                          optimizer=optimizer,
                          loss='binary_crossentropy',

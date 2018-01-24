@@ -10,11 +10,11 @@ import pandas as pd
 def simple(learning_rate=0.001, loss=None):
     network = input_data(shape=[None, 46, 45, 1])
 
-    network = conv_2d(network, 8, 64, activation='relu', name='conv1')
-    network = max_pool_2d(network, 3, strides=1)
+    network = conv_2d(network, 8, 32, activation='relu', name='conv1')
+    network = max_pool_2d(network, 3, strides=2)
 
-    network = conv_2d(network, 4, 32, activation='relu', name='conv2')
-    network = max_pool_2d(network, 3, strides=1)
+    network = conv_2d(network, 4, 16, activation='relu', name='conv2')
+    network = max_pool_2d(network, 3, strides=2)
 
 
     network = fully_connected(network, 100, activation='relu', name='fc1')

@@ -2,8 +2,8 @@ import cnn_cherenkov.image_io as image_io
 import matplotlib.pyplot as plt
 import numpy as np
 
-df, images = image_io.load_crab_data(0, 10000)
-X, Y = image_io.get_mc_training_data(0, 10000)
+df, images, y = image_io.load_crab_training_data(N=5000)
+X, Y = image_io.load_mc_training_data(N=5000)
 
 gammas = X[Y[:, 0]==1]
 protons = X[Y[:, 1]==1]

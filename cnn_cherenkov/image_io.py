@@ -18,15 +18,16 @@ def load_mc_training_data(N=-1):
     Y = np.append(np.ones(len(df_gammas)), np.zeros(len(df_protons)))
     Y = OneHotEncoder().fit_transform(Y.reshape(-1, 1)).toarray()
 
-    X, Y = shuffle(X, Y)
-
+    #X, Y = shuffle(X, Y)
+    print('wow not teh shuffling')
     return X, Y
 
 
 def scale_images(images):
-    images[images < 2] = 0
-    qmax = np.percentile(images, q=99.8, axis=(1, 2))
+    images[images < 3] = 0
+    qmax = np.percentile(images, q=99.5, axis=(1, 2))
     a = images / qmax[:, np.newaxis, np.newaxis]
+    #a = images[:, :, :, np.newaxis]
     return a.reshape((len(images), 46, 45, -1))
 
 
@@ -64,6 +65,7 @@ def load_crab_training_data(N=-1, prediction_threshold=0.8):
     dl3 = fio.read_data('./data/dl3/open_crab_sample_dl3.hdf5', key='events')
     dl3 = dl3.set_index(['night', 'run_id', 'event_num'])
 
+    print('Reading crab image index')
     f = h5py.File('./data/crab_images.hdf5')
     night = f['events/night'][:]
     run = f['events/run_id'][:]
@@ -73,17 +75,22 @@ def load_crab_training_data(N=-1, prediction_threshold=0.8):
     df['int_index'] = df.index
     df = df.set_index(['night', 'run_id', 'event_num'])
 
+    print('joining crab data with analysis results')
     data = df.join(dl3, how='inner')
 
     indices = data.int_index.values
     data = data.set_index(indices)
 
     if N > 0:
-        indices = np.random.choice(indices, N, replace=False)
+        indices = indices[:N]
 
+    print('sorting index')
     indices = list(sorted(indices))
+
+    print('loading {} images'.format(len(indices)))
     images = f['events/image'][indices]
 
+    print('selecting types')
     data = data.loc[indices]
     data = data.reset_index()
 
