@@ -2,7 +2,6 @@ import numpy as np
 import photon_stream as ps
 from tqdm import tqdm
 import h5py
-from fact.instrument.camera import reorder_softid2chid
 from fact.io import initialize_h5py, append_to_h5py
 from astropy.table import Table
 import click
@@ -20,7 +19,6 @@ def take(n, iterable):
 
 mapping = pickle.load(open('./cnn_cherenkov/hexagonal_position_dict.p', 'rb'))
 mapping_fact_tools = np.array([t[1] for t in mapping.items()])
-#mapping_ceres = reorder_softid2chid(mapping_fact_tools)
 
 @jit
 def make_image(photon_content):
