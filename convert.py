@@ -20,8 +20,9 @@ def take(n, iterable):
 mapping = pickle.load(open('./cnn_cherenkov/hexagonal_position_dict.p', 'rb'))
 mapping_fact_tools = np.array([t[1] for t in mapping.items()])
 
+
 @jit
-def make_image(photon_content):
+def remap_pixel_values(photon_content):
     input_matrix = np.zeros([46, 45])
     for i in range(1440):
         x, y = mapping_fact_tools[i]
@@ -41,7 +42,7 @@ def image_from_event(event, roi=[5, 40]):
         event_num = int(event.simulation_truth.event)
 
     sequence = event.photon_stream.image_sequence
-    img = make_image(sequence[roi[0]:roi[1]].sum(axis=0))
+    img = remap_pixel_values(sequence[roi[0]:roi[1]].sum(axis=0))
 
     return [night_reuse, run, event_num, event.az, event.zd], img
 
@@ -89,14 +90,18 @@ def convert_file(path):
 @click.argument('out_file', type=click.Path(exists=False, dir_okay=False))
 @click.option('--n_jobs', '-n', default=4)
 @click.option('--n_chunks', '-c', default=9)
-def main(in_files, out_file, n_jobs, n_chunks):
+@click.option('--yes\--no', default=True)
+def main(in_files, out_file, n_jobs, n_chunks, yes):
     '''
     Reads all photon_stream files and converts them to images.
     '''
 
     if os.path.exists(out_file):
-        click.confirm('Do you want to overwrite existing file?', abort=True)
-        os.remove(out_file)
+        if yes:
+            os.remove(out_file)
+        else:
+            click.confirm('Do you want to overwrite existing file?', abort=True)
+            os.remove(out_file)
 
 
     files = sorted(in_files)
