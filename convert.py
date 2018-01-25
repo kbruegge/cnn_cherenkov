@@ -55,8 +55,7 @@ def image_from_event(event, roi=[5, 40]):
     return d
 
 
-def write_to_hdf(recarray, filename):
-    key = 'events'
+def write_to_hdf(recarray, filename, key='events'):
     with h5py.File(filename, mode='a') as f:
         if key not in f:
             initialize_h5py(f, recarray, key=key)
@@ -93,14 +92,14 @@ def main(in_files, out_file, n_jobs, n_chunks, yes):
     '''
 
     if os.path.exists(out_file):
-        if yes:
-            os.remove(out_file)
-        else:
-            click.confirm('Do you want to overwrite existing file?', abort=True)
-            os.remove(out_file)
 
+        if not yes:
+            click.confirm('Do you want to overwrite existing file?', abort=True)
+        os.remove(out_file)
 
     files = sorted(in_files)
+
+
     file_chunks = np.array_split(files, n_chunks)
     for fs in tqdm(file_chunks):
         if n_jobs > 1:
@@ -115,6 +114,14 @@ def main(in_files, out_file, n_jobs, n_chunks, yes):
                 pass
 
         print('Successfully read {} files'.format(len(results)))
+
+    print('writing corsika headers to file')
+    for f in tqdm(files):
+        reader = ps.SimulationReader(
+            photon_stream_path=f,
+        )
+        thrown_events = Table(reader.thrown_events()).as_array()
+        write_to_hdf(thrown_events, out_file, key='shower')
 
 
 if __name__ == '__main__':
