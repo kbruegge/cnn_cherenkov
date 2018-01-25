@@ -1,13 +1,18 @@
+import os
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 from cnn_cherenkov import image_io
 from cnn_cherenkov import networks
 from cnn_cherenkov import plotting
 import click
-import os
+import tensorflow as tf
+
+tf.logging.set_verbosity(tf.logging.ERROR)
 
 
 model_path = './data/model/supervised/fact.tflearn'
 checkpoint_path = './data/model/supervised'
 predictions_path = './build/predictions_supervised_mc.hdf5'
+
 
 def load_model(network):
     import tflearn
@@ -21,16 +26,17 @@ def load_model(network):
     if os.path.exists(p):
         print('Loading Model')
         model.load(model_path)
+        return model
     else:
-        print('No model to load. Starting from scratch')
-    return model
+        return None
+
 
 
 @click.group()
 @click.option('--network', '-n', default='alexnet')
 @click.pass_context
 def cli(context, network):
-    print('Loading {}'.format(network))
+    # print('Loading {}'.format(network))
 
     if network == 'alexnet':
         network = networks.alexnet()
@@ -124,7 +130,17 @@ def train(ctx, epochs, learning_rate, mc, number_of_training_samples, batch_size
 def apply(ctx, data):
     network = ctx.obj['network']
     model = load_model(network)
-    df = image_io.apply_to_data(model)
+
+    if not model:
+        print('No model trained yet. Do so first.')
+        return
+
+    if data == 'crab':
+        df = image_io.apply_to_observation_data(model)
+    elif data == 'gamma':
+        df = image_io.apply_to_mc(model, path='./data/gamma_images.hdf5')
+    elif data == 'proton':
+        df = image_io.apply_to_mc(model, path='./data/proton_images.hdf5')
     print('Writing {} events to file {}'.format(len(df), predictions_path))
     df.to_hdf(predictions_path, key='events')
 
