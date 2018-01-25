@@ -7,10 +7,13 @@ from sklearn.utils import shuffle
 from tqdm import tqdm
 
 
-def load_mc_training_data(N=-1):
+def load_mc_training_data(N=-1, path_gamma='./data/gamma_images.hdf5', path_proton='./data/proton_images.hdf5'):
+    '''
+    Loads gamma and proton images from hdf5 files and returns images X and One-Hot encoed labels Y
+    '''
     N = N // 2
-    df_gammas, images_gammas = read_rows('./data/gamma_images.hdf5', N=N)
-    df_protons, images_protons = read_rows('./data/proton_images.hdf5', N=N)
+    df_gammas, images_gammas = read_rows(path_gamma, N=N)
+    df_protons, images_protons = read_rows(path_proton, N=N)
 
     images_gammas = scale_images(images_gammas)
     images_protons = scale_images(images_protons)
@@ -51,7 +54,6 @@ def read_rows(path, N=-1):
         zd = f['events/zd'][:]
         images = f['events/image'][:]
 
-
     df = pd.DataFrame({'night': night, 'run_id': run, 'event_num': event, 'zd': zd, 'az': az, })
     return df, images
 
@@ -85,7 +87,6 @@ def load_crab_training_data(N=-1, prediction_threshold=0.8):
     else:
         N = len(indices)
 
-    # import IPython; IPython.embed()
 
     print('loading {} images'.format(len(indices)))
     images = load_images_with_index(indices)
@@ -93,8 +94,8 @@ def load_crab_training_data(N=-1, prediction_threshold=0.8):
     data = data.loc[indices]
     data = data.reset_index()
 
-    gammas = data[data.gamma_prediction >= 0.8]
-    protons = data[data.gamma_prediction < 0.8]
+    gammas = data[data.gamma_prediction >= prediction_threshold]
+    protons = data[data.gamma_prediction < prediction_threshold]
 
     ids_gamma = np.random.choice(gammas.index.values, N // 2)
     ids_proton = np.random.choice(protons.index.values, N // 2)
@@ -154,7 +155,6 @@ def load_images_with_index(indices, path='./data/crab_images.hdf5'):
 
 
 def load_crab_data(start=0, end=1000,):
-
     dl3 = fio.read_data('./data/dl3/open_crab_sample_dl3.hdf5', key='events')
     dl3 = dl3.set_index(['night', 'run_id', 'event_num'])
 
@@ -175,8 +175,9 @@ def load_crab_data(start=0, end=1000,):
     return data, images
 
 
-def apply_to_data(model):
-    N = number_of_images('./data/crab_images.hdf5')
+
+def apply_to_observation_data(model, path='./data/crab_images.hdf5'):
+    N = number_of_images(path)
     idx = np.array_split(np.arange(0, N), N / 8000)
     dfs = []
     event_counter = 0
@@ -193,9 +194,21 @@ def apply_to_data(model):
             df['predictions_convnet'] = predictions
             dfs.append(df)
     except KeyboardInterrupt:
-        print('Stopping process..')
+        print('User stopped process...')
+    except Exception as e:
+        print('Aborting due to error:')
+        print(e)
     finally:
         print('Concatenating {} data frames'.format(len(dfs)))
         df = pd.concat(dfs)
         assert event_counter == len(df)
         return df
+
+
+
+def apply_to_mc(model, path='./data/gamma_images.hdf5'):
+    df_gammas, images = read_rows(path)
+    images = scale_images(images)
+    predictions = model.predict(images)[:, 1]
+    df_gammas['predictions_convnet'] = predictions
+    return predictions

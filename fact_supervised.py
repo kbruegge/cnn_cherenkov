@@ -119,8 +119,9 @@ def train(ctx, epochs, learning_rate, mc, number_of_training_samples, batch_size
 
 
 @cli.command()
+@click.option('--data', '-d', default='crab', type=click.Choice(['crab', 'gamma', 'proton']))
 @click.pass_context
-def apply(ctx):
+def apply(ctx, data):
     network = ctx.obj['network']
     model = load_model(network)
     df = image_io.apply_to_data(model)
