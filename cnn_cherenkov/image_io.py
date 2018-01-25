@@ -39,23 +39,30 @@ def read_rows(path, N=-1):
     return dataframe containg high level information and images (df, images)
     '''
     f = h5py.File(path)
-    if N > 1:
-        night = f['events/night'][0:N]
-        run = f['events/run_id'][0:N]
-        event = f['events/event_num'][0:N]
-        az = f['events/az'][0:N]
-        zd = f['events/zd'][0:N]
-        images = f['events/image'][0:N]
-    else:
-        night = f['events/night'][:]
-        run = f['events/run_id'][:]
-        event = f['events/event_num'][:]
-        az = f['events/az'][:]
-        zd = f['events/zd'][:]
-        images = f['events/image'][:]
+    if N < 1:
+        N = len(f['events/image'])
 
-    df = pd.DataFrame({'night': night, 'run_id': run, 'event_num': event, 'zd': zd, 'az': az, })
-    return df, images
+    d = {}
+    try:
+        d['reuse'] = f['events/reuse'][0:N]
+        d['run'] = f['events/run_id'][0:N]
+        d['event'] = f['events/event_num'][0:N]
+        d['energy'] = f['events/energy'][0:N]
+        d['impact_x'] = f['events/imact_x'][0:N]
+        d['impact_y'] = f['events/imact_y'][0:N]
+        d['corsika_phi'] = f['events/corsika_phi'][0:N]
+        d['corsika_phi'] = f['events/corsika_theta'][0:N]
+
+    except KeyError:
+        d['night'] = f['events/night'][0:N]
+        d['run'] = f['events/run_id'][0:N]
+        d['event'] = f['events/event_num'][0:N]
+        d['az'] = f['events/az'][0:N]
+        d['zd'] = f['events/zd'][0:N]
+
+    images = f['events/image'][0:N]
+
+    return pd.DataFrame(d), images
 
 
 def load_crab_training_data(N=-1, prediction_threshold=0.8):
