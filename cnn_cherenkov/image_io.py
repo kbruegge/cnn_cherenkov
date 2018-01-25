@@ -43,17 +43,17 @@ def read_rows(path, N=-1):
         N = len(f['events/image'])
 
     d = {}
-    try:
+    if 'corsika_phi' in list(f['events']):
         d['reuse'] = f['events/reuse'][0:N]
-        d['run'] = f['events/run_id'][0:N]
+        d['run'] = f['events/run'][0:N]
         d['event'] = f['events/event_num'][0:N]
         d['energy'] = f['events/energy'][0:N]
-        d['impact_x'] = f['events/imact_x'][0:N]
-        d['impact_y'] = f['events/imact_y'][0:N]
+        d['impact_x'] = f['events/impact_x'][0:N]
+        d['impact_y'] = f['events/impact_y'][0:N]
         d['corsika_phi'] = f['events/corsika_phi'][0:N]
         d['corsika_phi'] = f['events/corsika_theta'][0:N]
 
-    except KeyError:
+    else:
         d['night'] = f['events/night'][0:N]
         d['run'] = f['events/run_id'][0:N]
         d['event'] = f['events/event_num'][0:N]
