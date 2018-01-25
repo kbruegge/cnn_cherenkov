@@ -29,13 +29,7 @@ def make_image(photon_content):
     return input_matrix
 
 
-def convert_event(event, roi=[5, 40]):
-    imgs = event.photon_stream.image_sequence
-    m = imgs[roi[0]:roi[1]].sum(axis=0)
-    return make_image(m)
-
-
-def image_from_event(event):
+def image_from_event(event, roi=[5, 40]):
     try:
         night_reuse = int(event.observation_info.night)
         run = int(event.observation_info.run)
@@ -46,7 +40,9 @@ def image_from_event(event):
         run = int(event.simulation_truth.run)
         event_num = int(event.simulation_truth.event)
 
-    img = convert_event(event,)
+    sequence = event.photon_stream.image_sequence
+    img = make_image(sequence[roi[0]:roi[1]].sum(axis=0))
+
     return [night_reuse, run, event_num, event.az, event.zd], img
 
 
