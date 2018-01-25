@@ -11,7 +11,6 @@ tf.logging.set_verbosity(tf.logging.ERROR)
 
 model_path = './data/model/supervised/fact.tflearn'
 checkpoint_path = './data/model/supervised'
-predictions_path = './build/predictions_supervised_mc.hdf5'
 
 
 def load_model(network):
@@ -125,9 +124,11 @@ def train(ctx, epochs, learning_rate, mc, number_of_training_samples, batch_size
 
 
 @cli.command()
+@click.argument('out_file', type=click.Path(dir_okay=False))
 @click.option('--data', '-d', default='crab', type=click.Choice(['crab', 'gamma', 'proton']))
+@click.option('--number_of_images', '-n', default=-1)
 @click.pass_context
-def apply(ctx, data):
+def apply(ctx, out_file, data, number_of_images):
     network = ctx.obj['network']
     model = load_model(network)
 
@@ -138,11 +139,11 @@ def apply(ctx, data):
     if data == 'crab':
         df = image_io.apply_to_observation_data(model)
     elif data == 'gamma':
-        df = image_io.apply_to_mc(model, path='./data/gamma_images.hdf5')
+        df = image_io.apply_to_mc(model, path='./data/gamma_images.hdf5', N=number_of_images)
     elif data == 'proton':
-        df = image_io.apply_to_mc(model, path='./data/proton_images.hdf5')
-    print('Writing {} events to file {}'.format(len(df), predictions_path))
-    df.to_hdf(predictions_path, key='events')
+        df = image_io.apply_to_mc(model, path='./data/proton_images.hdf5', N=number_of_images)
+    print('Writing {} events to file {}'.format(len(df), out_file))
+    df.to_hdf(out_file, key='events')
 
 
 if __name__ == '__main__':
