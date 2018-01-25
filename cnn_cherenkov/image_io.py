@@ -216,6 +216,10 @@ def apply_to_observation_data(model, path='./data/crab_images.hdf5'):
 def apply_to_mc(model, path='./data/gamma_images.hdf5'):
     df_gammas, images = read_rows(path)
     images = scale_images(images)
-    predictions = model.predict(images)[:, 1]
+
+    N = len(df_gammas)
+    image_batches = np.array_split(images, N / 8000)
+    predictions = [model.predict(batch) for batch in image_batches]
+
     df_gammas['predictions_convnet'] = predictions
-    return predictions
+    return df_gammas
