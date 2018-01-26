@@ -5,7 +5,6 @@ import h5py
 from fact.io import initialize_h5py, append_to_h5py
 from astropy.table import Table
 import click
-import os
 import pickle
 from joblib import Parallel, delayed
 from itertools import islice
@@ -91,11 +90,11 @@ def main(in_files, out_file, n_jobs, n_chunks, yes):
     Reads all photon_stream files and converts them to images.
     '''
 
-    if os.path.exists(out_file):
+   # if os.path.exists(out_file):
 
-        if not yes:
-            click.confirm('Do you want to overwrite existing file?', abort=True)
-        os.remove(out_file)
+   #     if not yes:
+   #         click.confirm('Do you want to overwrite existing file?', abort=True)
+   #     os.remove(out_file)
 
     files = sorted(in_files)
 
@@ -121,7 +120,7 @@ def main(in_files, out_file, n_jobs, n_chunks, yes):
             photon_stream_path=f,
         )
         thrown_events = Table(reader.thrown_events()).as_array()
-        write_to_hdf(thrown_events, out_file, key='shower')
+        write_to_hdf(thrown_events, out_file, key='showers')
 
 
 if __name__ == '__main__':
