@@ -101,16 +101,8 @@ def train(ctx, epochs, learning_rate, data_source, number_of_training_samples, b
         print('Loading Crab data.')
         df, X, Y = image_io.load_crab_training_data(N=number_of_training_samples)
     elif data_source in ['mix', 'both']:
-        import numpy as np
-        from sklearn.utils import shuffle
         print('Mixing observations and MC data.')
-        df, X_data, Y_data = image_io.load_crab_training_data(N=number_of_training_samples // 2)
-        X_mc, Y_mc = image_io.load_mc_training_data(N=number_of_training_samples // 2)
-
-        X = np.vstack([X_data, X_mc])
-        Y = np.vstack([Y_data, Y_mc])
-
-        X, Y = shuffle(X, Y, random_state=0)
+        X, Y = image_io.load_mc_data_mix(N=number_of_training_samples)
 
 
     network = regression(network,

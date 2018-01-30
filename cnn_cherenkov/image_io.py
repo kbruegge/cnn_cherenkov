@@ -26,6 +26,20 @@ def load_mc_training_data(N=-1, path_gamma='./data/gamma_images.hdf5', path_prot
     return X, Y
 
 
+def load_mc_data_mix(N=-1, prediction_threshold=0.8):
+    '''
+    Loads MC data mixed with real observation data for trained. Results are shuffled.
+    '''
+    _, X_data, Y_data = load_crab_training_data(N=N // 2, prediction_threshold=prediction_threshold)
+    X_mc, Y_mc = load_mc_training_data(N=N // 2)
+
+    X = np.vstack([X_data, X_mc])
+    Y = np.vstack([Y_data, Y_mc])
+
+    X, Y = shuffle(X, Y, random_state=0)
+    return X, Y
+
+
 def scale_images(images):
     qmax = np.percentile(images, q=99.5, axis=(1, 2))
     a = images / qmax[:, np.newaxis, np.newaxis]
