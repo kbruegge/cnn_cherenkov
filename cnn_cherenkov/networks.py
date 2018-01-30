@@ -6,6 +6,37 @@ from tflearn.layers.normalization import local_response_normalization
 def simple(learning_rate=0.001, loss=None):
     network = input_data(shape=[None, 45, 46, 1])
 
+    network = conv_2d(network, 32, 32, strides=2,  activation='relu', name='conv1')
+    network = max_pool_2d(network, 2,)
+    network = local_response_normalization(network)
+
+    network = conv_2d(network, 16, 16, activation='relu', name='conv2')
+    network = max_pool_2d(network, 2)
+    network = local_response_normalization(network)
+
+    network = conv_2d(network, 16, 16, activation='relu', name='conv3')
+    network = max_pool_2d(network, 2)
+    network = conv_2d(network, 32, 2, activation='relu', name='conv4')
+    network = max_pool_2d(network, 2)
+    network = local_response_normalization(network)
+
+
+    network = fully_connected(network, 300, activation='relu', name='fc1')
+    network = dropout(network, 0.8)
+    network = fully_connected(network, 300, activation='relu', name='fc2')
+    network = dropout(network, 0.8)
+    network = fully_connected(network, 300, activation='relu', name='fc3')
+    network = dropout(network, 0.8)
+    network = fully_connected(network, 300, activation='relu', name='fc4')
+    network = dropout(network, 0.5)
+    network = fully_connected(network, 2, activation='softmax', name='fc5', restore=False)
+    return network
+
+
+
+def simple_small(learning_rate=0.001, loss=None):
+    network = input_data(shape=[None, 45, 46, 1])
+
     network = conv_2d(network, 8, 32, activation='relu', name='conv1')
     network = max_pool_2d(network, 3, strides=2)
 
@@ -17,7 +48,7 @@ def simple(learning_rate=0.001, loss=None):
     network = dropout(network, 0.5)
     network = fully_connected(network, 100, activation='relu', name='fc2')
     network = dropout(network, 0.5)
-    network = fully_connected(network, 2, activation='softmax', name='fc3')
+    network = fully_connected(network, 2, activation='softmax', name='fc3', restore=True)
     return network
 
 
@@ -38,7 +69,7 @@ def alexnet(learning_rate=0.001, loss=None):
     network = dropout(network, 0.5)
     network = fully_connected(network, 4096, activation='tanh')
     network = dropout(network, 0.5)
-    network = fully_connected(network, 2, activation='softmax')
+    network = fully_connected(network, 2, activation='softmax', restore=True)
     return network
 
 

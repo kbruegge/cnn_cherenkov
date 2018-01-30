@@ -5,29 +5,32 @@ from cnn_cherenkov import networks
 from cnn_cherenkov import plotting
 import click
 import tensorflow as tf
+from tensorflow.python.framework.errors_impl import NotFoundError
+
 
 tf.logging.set_verbosity(tf.logging.ERROR)
 
 
-model_path = './data/model/supervised/fact.tflearn'
-checkpoint_path = './data/model/supervised'
+model_path = './data/model/supervised/fact.tfl'
+checkpoint_path = './data/model/supervised/fact.tfl.ckpt'
 
 
 def load_model(network):
     import tflearn
     model = tflearn.DNN(network,
                         checkpoint_path=checkpoint_path,
-                        max_checkpoints=1,
                         tensorboard_verbose=3,
                         )
 
     p = '{}.index'.format(model_path)
     if os.path.exists(p):
         print('Loading Model')
-        model.load(model_path)
-        return model
-    else:
-        return None
+        try:
+            model.load(model_path)
+        except NotFoundError as e:
+            print('Loading only weights.')
+            model.load(model_path, weights_only=True)
+    return model
 
 
 
@@ -73,11 +76,10 @@ def clear():
     Clear all checkpoints and trained models
     '''
     click.confirm('Do you want to delete all pretrained models?', abort=True)
-    import shutil
-    shutil.rmtree(checkpoint_path)
     import os
-    os.makedirs(checkpoint_path, exist_ok=True)
-
+    directory = os.path.dirname(model_path)
+    for f in os.listdir(directory):
+        os.remove(os.path.join(directory, f))
 
 
 @cli.command()
@@ -132,7 +134,8 @@ def apply(ctx, out_file, data, number_of_images):
     network = ctx.obj['network']
     model = load_model(network)
 
-    if not model:
+    p = '{}.index'.format(model_path)
+    if not os.path.exists(p):
         print('No model trained yet. Do so first.')
         return
 

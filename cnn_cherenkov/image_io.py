@@ -27,7 +27,6 @@ def load_mc_training_data(N=-1, path_gamma='./data/gamma_images.hdf5', path_prot
 
 
 def scale_images(images):
-    images[images < 3] = 0
     qmax = np.percentile(images, q=99.5, axis=(1, 2))
     a = images / qmax[:, np.newaxis, np.newaxis]
     return a.reshape((len(images), 45, 46, -1))
