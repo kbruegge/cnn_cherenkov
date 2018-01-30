@@ -72,7 +72,7 @@ def load_crab_training_data(N=-1, prediction_threshold=0.8):
     dl3 = fio.read_data('./data/dl3/open_crab_sample_dl3.hdf5', key='events')
     dl3 = dl3.set_index(['night', 'run_id', 'event_num'])
 
-    f = h5py.File('./data/crab_images.hdf5')
+    f = h5py.File('./data/crab_images.hdf5', 'r')
     night = f['events/night'][:]
     run = f['events/run_id'][:]
     event = f['events/event_num'][:]
@@ -164,7 +164,7 @@ def load_crab_data(start=0, end=1000,):
     dl3 = fio.read_data('./data/dl3/open_crab_sample_dl3.hdf5', key='events')
     dl3 = dl3.set_index(['night', 'run_id', 'event_num'])
 
-    f = h5py.File('./data/crab_images.hdf5')
+    f = h5py.File('./data/crab_images.hdf5', 'r')
     night = f['events/night'][start:end]
     run = f['events/run_id'][start:end]
     event = f['events/event_num'][start:end]
