@@ -85,23 +85,31 @@ def clear():
 @cli.command()
 @click.option('-e', '--epochs', default=1)
 @click.option('-l', '--learning_rate', default=0.001)
-@click.option('--mc/--data', default=True)
+@click.option('-d', '--data_source', default='mc', type=click.Choice(['simulation', 'mc', 'data', 'observations', 'mix', 'both']))
 @click.option('-n', '--number_of_training_samples', default=100000)
 @click.option('-b', '--batch_size', default=512)
 @click.option('-o', '--optimizer', type=click.Choice(['adam', 'momentum', 'sgd']), default='adam')
 @click.pass_context
-def train(ctx, epochs, learning_rate, mc, number_of_training_samples, batch_size, optimizer):
+def train(ctx, epochs, learning_rate, data_source, number_of_training_samples, batch_size, optimizer):
     from tflearn.layers.estimator import regression
     network = ctx.obj['network']
 
-    if mc:
+    if data_source in ['simulation', 'mc']:
         print('Loading simulated data.')
         X, Y = image_io.load_mc_training_data(N=number_of_training_samples)
-    else:
+    elif data_source in ['observations', 'data']:
         print('Loading Crab data.')
         df, X, Y = image_io.load_crab_training_data(N=number_of_training_samples)
-        #df, images = load_crab_data(0, number_of_training_samples)
-        #X, Y = sample_training_data(df, images)
+    elif data_source in ['mix', 'both']:
+        import numpy as np
+        print('Mixing observations and MC data.')
+        df, X_data, Y_data = image_io.load_crab_training_data(N=number_of_training_samples // 2)
+        X_mc, Y_mc = image_io.load_mc_training_data(N=number_of_training_samples // 2)
+        import IPython; IPython.embed()
+        
+        X = np.vstack([X_data, X_mc])
+        Y = np.vstack([Y_data, Y_mc])
+
 
     network = regression(network,
                          optimizer=optimizer,
