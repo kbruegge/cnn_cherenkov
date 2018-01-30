@@ -133,6 +133,7 @@ def train(ctx, epochs, learning_rate, data_source, number_of_training_samples, b
 @click.option('--number_of_images', '-n', default=-1)
 @click.pass_context
 def apply(ctx, out_file, data, number_of_images):
+    import fact.io as fio
     network = ctx.obj['network']
     model = load_model(network)
 
@@ -143,12 +144,19 @@ def apply(ctx, out_file, data, number_of_images):
 
     if data == 'crab':
         df = image_io.apply_to_observation_data(model)
+
     elif data == 'gamma':
         df = image_io.apply_to_mc(model, path='./data/gamma_images.hdf5', N=number_of_images)
+        shower_truth = fio.read_data('./data/gamma_images.hdf5', key='showers')
+        fio.write_data(shower_truth, file_path=out_file, key='showers', use_hp5y=True)
+
     elif data == 'proton':
         df = image_io.apply_to_mc(model, path='./data/proton_images.hdf5', N=number_of_images)
+        shower_truth = fio.read_data('./data/proton_images.hdf5', key='showers')
+        fio.write_data(shower_truth, file_path=out_file, key='showers', use_hp5y=True)
+
     print('Writing {} events to file {}'.format(len(df), out_file))
-    df.to_hdf(out_file, key='events')
+    fio.write_data(df, out_file, key='events')
 
 
 if __name__ == '__main__':
