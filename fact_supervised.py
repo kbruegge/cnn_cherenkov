@@ -142,6 +142,10 @@ def apply(ctx, out_file, data, number_of_images):
         print('No model trained yet. Do so first.')
         return
 
+    if os.path.exists(out_file):
+        click.confirm('Do you want to overwrite existing file {}?'.format(out_file), abort=True)
+        os.remove(out_file)
+
     if data == 'crab':
         df = image_io.apply_to_observation_data(model)
 
