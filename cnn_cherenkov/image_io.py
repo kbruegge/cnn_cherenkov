@@ -64,7 +64,7 @@ def read_rows(path, N=-1):
         d['impact_x'] = f['events/impact_x'][0:N]
         d['impact_y'] = f['events/impact_y'][0:N]
         d['corsika_phi'] = f['events/corsika_phi'][0:N]
-        d['corsika_phi'] = f['events/corsika_theta'][0:N]
+        d['corsika_theta'] = f['events/corsika_theta'][0:N]
 
     else:
         d['night'] = f['events/night'][0:N]

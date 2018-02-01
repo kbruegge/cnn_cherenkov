@@ -45,7 +45,7 @@ def image_from_event(event, roi=[5, 40]):
         d['impact_x'] = truth.air_shower.impact_x(truth.reuse)
         d['impact_y'] = truth.air_shower.impact_y(truth.reuse)
         d['corsika_phi'] = truth.air_shower.phi
-        d['corsika_theta'] = truth.air_shower.phi
+        d['corsika_theta'] = truth.air_shower.theta
 
     d['az'] = int(event.az)
     d['zd'] = int(event.zd)
