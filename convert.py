@@ -47,6 +47,8 @@ def image_from_event(event, roi=[5, 40]):
         d['corsika_phi'] = truth.air_shower.phi
         d['corsika_theta'] = truth.air_shower.phi
 
+    d['alt'] = int(event.alt)
+    d['az'] = int(event.az)
 
     sequence = event.photon_stream.image_sequence
     img = remap_pixel_values(sequence[roi[0]:roi[1]].sum(axis=0))
@@ -90,11 +92,10 @@ def main(in_files, out_file, n_jobs, n_chunks, yes):
     Reads all photon_stream files and converts them to images.
     '''
 
-   # if os.path.exists(out_file):
-
-   #     if not yes:
-   #         click.confirm('Do you want to overwrite existing file?', abort=True)
-   #     os.remove(out_file)
+   if os.path.exists(out_file):
+       if not yes:
+           click.confirm('Do you want to overwrite existing file?', abort=True)
+       os.remove(out_file)
 
     files = sorted(in_files)
 
