@@ -5,6 +5,32 @@ import numpy as np
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.utils import shuffle
 from tqdm import tqdm
+from fact.coordinates import horizontal_to_camera
+
+
+
+def load_training_data_position(N=-1, path_gamma='./data/gamma_images.hdf5'):
+    '''
+    Loads gamma dl2 data and use the source position of the true source position in x y camera coordinates.
+    '''
+    df_gammas, images_gammas = read_rows(path_gamma, N=N)
+    X = scale_images(images_gammas)
+
+
+    # az_offset_between_magnetic_and_geographic_north = -0.12217305  # aboout -7 degrees
+    # az_offset_between_corsika_and_ceres = - np.pi + az_offset_between_magnetic_and_geographic_north
+
+    source_az = np.rad2deg(df_gammas.corsika_phi) + 180
+    source_zd = np.rad2deg(df_gammas.corsika_theta)
+
+    pointing_az = df_gammas.az + 180
+    pointing_zd = df_gammas.zd
+
+    x, y = horizontal_to_camera(source_zd, source_az, pointing_zd, pointing_az)
+    Y = np.vstack([x, y]).T
+    import IPython; IPython.embed()
+
+    return X, Y
 
 
 def load_mc_training_data(N=-1, path_gamma='./data/gamma_images.hdf5', path_proton='./data/proton_images.hdf5'):
@@ -70,8 +96,9 @@ def read_rows(path, N=-1):
         d['night'] = f['events/night'][0:N]
         d['run'] = f['events/run_id'][0:N]
         d['event'] = f['events/event_num'][0:N]
-        d['az'] = f['events/az'][0:N]
-        d['zd'] = f['events/zd'][0:N]
+
+    d['az'] = f['events/az'][0:N]
+    d['zd'] = f['events/zd'][0:N]
 
     images = f['events/image'][0:N]
 
