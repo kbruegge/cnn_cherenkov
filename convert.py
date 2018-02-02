@@ -47,8 +47,8 @@ def image_from_event(event, roi=[5, 40]):
         d['corsika_phi'] = truth.air_shower.phi
         d['corsika_theta'] = truth.air_shower.theta
 
-    d['az'] = int(event.az)
-    d['zd'] = int(event.zd)
+    d['az'] = event.az
+    d['zd'] = event.zd
 
     sequence = event.photon_stream.image_sequence
     img = remap_pixel_values(sequence[roi[0]:roi[1]].sum(axis=0))
