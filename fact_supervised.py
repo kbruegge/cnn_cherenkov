@@ -91,8 +91,8 @@ def clear():
 @click.option('-o', '--optimizer', type=click.Choice(['adam', 'momentum', 'sgd']), default='adam')
 @click.pass_context
 def train_disp(ctx, epochs, learning_rate, number_of_training_samples, batch_size, optimizer):
-    from tflearn.layers.estimator import regression
-    network = ctx.obj['network']
+    # from tflearn.layers.estimator import regression
+    # network = ctx.obj['network']
 
     X, Y = image_io.load_training_data_position(N=number_of_training_samples,)
     import IPython; IPython.embed()

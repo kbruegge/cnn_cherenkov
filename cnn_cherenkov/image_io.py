@@ -20,15 +20,14 @@ def load_training_data_position(N=-1, path_gamma='./data/gamma_images.hdf5'):
     # az_offset_between_magnetic_and_geographic_north = -0.12217305  # aboout -7 degrees
     # az_offset_between_corsika_and_ceres = - np.pi + az_offset_between_magnetic_and_geographic_north
 
-    source_az = np.rad2deg(df_gammas.corsika_phi) + 180
+    source_az = np.rad2deg(-np.pi + df_gammas.corsika_phi + -0.12217305)
     source_zd = np.rad2deg(df_gammas.corsika_theta)
 
-    pointing_az = df_gammas.az + 180
+    pointing_az = df_gammas.az
     pointing_zd = df_gammas.zd
 
     x, y = horizontal_to_camera(source_zd, source_az, pointing_zd, pointing_az)
     Y = np.vstack([x, y]).T
-    import IPython; IPython.embed()
 
     return X, Y
 
