@@ -8,7 +8,6 @@ import click
 import pickle
 from joblib import Parallel, delayed
 from itertools import islice
-from numba import jit
 
 
 def take(n, iterable):
@@ -20,7 +19,6 @@ mapping = pickle.load(open('./cnn_cherenkov/hexagonal_position_dict.p', 'rb'))
 mapping_fact_tools = np.array([t[1] for t in mapping.items()])
 
 
-@jit
 def remap_pixel_values(photon_content):
     input_matrix = np.zeros([46, 45])
     for i in range(1440):

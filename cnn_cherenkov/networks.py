@@ -4,7 +4,7 @@ from tflearn.layers.normalization import local_response_normalization
 
 
 def simple(learning_rate=0.001, loss=None):
-    network = input_data(shape=[None, 45, 46, 1])
+    network = input_data(shape=[None, 46, 45, 1])
 
     network = conv_2d(network, 32, 32, strides=2,  activation='relu', name='conv1')
     network = max_pool_2d(network, 2,)
@@ -35,7 +35,7 @@ def simple(learning_rate=0.001, loss=None):
 
 
 def simple_small(learning_rate=0.001, loss=None):
-    network = input_data(shape=[None, 45, 46, 1])
+    network = input_data(shape=[None, 46, 45, 1])
 
     network = conv_2d(network, 8, 32, activation='relu', name='conv1')
     network = max_pool_2d(network, 3, strides=2)
@@ -53,7 +53,7 @@ def simple_small(learning_rate=0.001, loss=None):
 
 
 def alexnet(learning_rate=0.001, loss=None):
-    network = input_data(shape=[None, 45, 46, 1])
+    network = input_data(shape=[None, 46, 45, 1])
     network = conv_2d(network, 96, 11, strides=4, activation='relu', name='conv1')
     network = max_pool_2d(network, 3, strides=2)
     network = local_response_normalization(network)
@@ -74,7 +74,7 @@ def alexnet(learning_rate=0.001, loss=None):
 
 
 def alexnet_region(loss, learning_rate=0.001):
-    network = input_data(shape=[None, 45, 45, 1])
+    network = input_data(shape=[None, 46, 45, 1])
     network = conv_2d(network, 96, 11, strides=4, activation='relu')
     network = max_pool_2d(network, 3, strides=2)
     network = local_response_normalization(network)

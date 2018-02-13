@@ -1,4 +1,4 @@
-import cnn_cherenkov.image_io as image_io
+from cnn_cherenkov import image_io
 import matplotlib.pyplot as plt
 import numpy as np
 
